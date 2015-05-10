@@ -71,10 +71,10 @@ function onDeviceReady() {
 }
 
 function getHtmlToShow(){
-	window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onFRSuccess, onFSRError);
+	window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onFRSuccess, fail);
 }
 	function onFRSuccess(fileSystem) {
-		fileSystem.root.getFile(pathFileId+htmlTitleShow+".html", {create:false, exclusive:false}, gotFileEntryToRead, onFSRError);
+		fileSystem.root.getFile(pathFileId+htmlTitleShow+".html", {create:false, exclusive:false}, gotFileEntryToRead, fail);
 	}
 		function gotFileEntryToRead(fileEntry) {
 			alert("FileEntry Success");
@@ -85,18 +85,15 @@ function getHtmlToShow(){
 	
 	
 function saveFileToSystem() {
-    window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onFSSuccess, onFSRError);
+    window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onFSSuccess, fail);
 }
 	function onFSSuccess(fileSystem) {
-		fileSystem.root.getFile(pathFileId+htmlTitle+".html", {create:true, exclusive:false}, gotFileEntry, onFSRError);
+		fileSystem.root.getFile(pathFileId+htmlTitle+".html", {create:true, exclusive:false}, gotFileEntry, fail);
 	}
 		function gotFileEntry(fileEntry) {
-			fileEntry.createWriter(gotFileWriter, onFSRError);
+			fileEntry.createWriter(gotFileWriter, fail);
 		}
 			function gotFileWriter(writer) {
 				writer.onwrite = function(evt) {};
 				writer.write(htmlToSave);
 			}
-function onFSRError(err) {
-	
-}
