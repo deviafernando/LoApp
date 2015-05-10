@@ -59,14 +59,15 @@ function onDeviceReady() {
 		//if(isOnInternet){
 			var htmlText=getWebHtml(mainUrl,"home");
 			htmlTitleShow="home";
-			alert(htmlTitleShow);
 			getHtmlToShow();
 			//$("#results").html(htmlText);
 		//} else {
 			//necesita Internet la primera vez que inicialice su aplicación
+			//window.localStorage.setItem('firstTimeApp',false);
 		//};
 	//}else {
-	
+		//htmlTitleShow="home";
+		//getHtmlToShow();
 	//};
 }
 
