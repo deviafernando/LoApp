@@ -13,7 +13,7 @@ function isOnInternet(){
 		return false;
 	} else {
 		return true;
-	};
+	}
 }
 
 function fail(e) {
@@ -23,12 +23,13 @@ function fail(e) {
 
 function getUrlContent(urlRequest){
 	var response = false;
-	
+	alert(urlRequest);
 	$.ajax({
 		url: urlRequest,
         async: false,
 		cache: false,
 		success: function(data){
+			response = true;
 			return data;
 		},
 		error: function() { 
@@ -64,19 +65,22 @@ function generateAlert(title,message,button){
 }
 	
 function onDeviceReady() {
-	if(isFirstTimeApp()){
-		if(isOnInternet){
+
+	//if(isFirstTimeApp()){
+		//if(isOnInternet){
 			var dataContent=getUrlContent(mobileUrl+"mconfig.php");
 			alert(dataContent);
-			saveFileToSystem(title,format);
+			saveFileToSystem("config","json",dataContent);
 
-		} else {
+		//} else {
+			/*
 			window.localStorage.setItem('firstTimeApp',false);
 			generateAlert("Sin Conexión","Se requiere internet la primera vez que inicialice la aplicación","Aceptar");
 			navigator.app.exitApp();
-		}
-	}else {
-	}
+			*/
+		//}
+	//}else {
+	//}
 }
 
 function getHtmlToShow(){
@@ -94,7 +98,8 @@ function getHtmlToShow(){
 
 
 
-function saveFileToSystem(title,extension) {
+function saveFileToSystem(title,extension,content) {
+	fileContent=content;
 	fileTitle=title;
 	fileExtension=extension;
 
