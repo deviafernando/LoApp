@@ -1,10 +1,12 @@
 document.addEventListener('deviceready', onDeviceReady, false);
 
 var pathFileId = "Android/data/com.phonegap.helloworld/";
-var mainUrl = "http://www.enibague.com/"
-var htmlToSave = "";
-var htmlTitleShow = "";
-var htmlTitle = "";
+var mainUrl = "http://www.enibague.com/";
+var mobileUrl = "http://www.m.enibague.com/";
+
+var fileTitle="";
+var fileExtension="";
+var fileContent="";
 
 function isOnInternet(){
 	if(navigator.connection.type=="Connection.NONE"){
@@ -19,22 +21,19 @@ function fail(e) {
 	console.dir(e);
 }
 
-function getWebHtml(urlRequest,titleToSave){
-	htmlTitle=titleToSave;
+function getUrlContent(urlRequest){
 	var response = false;
 	
 	$.ajax({
 		url: urlRequest,
         async: false,
 		cache: false,
-		success: function(html){
-			htmlToSave=html;
-			saveFileToSystem();
-			response = true;
+		success: function(data){
+			return data;
 		},
 		error: function() { 
 			response = false;
-		},
+		}
 	});
 	
 	return response;
@@ -53,22 +52,31 @@ function isFirstTimeApp(){
 	
 }
 
+function generateAlert(title,message,button){
+	navigator.notification.alert(
+		message,
+		function() {
+
+		},
+		title,
+		button
+	);
+}
 	
 function onDeviceReady() {
-	//if(isFirstTimeApp()){
-		//if(isOnInternet){
-			var htmlText=getWebHtml(mainUrl,"home");
-			htmlTitleShow="home";
-			getHtmlToShow();
-			//$("#results").html(htmlText);
-		//} else {
-			//necesita Internet la primera vez que inicialice su aplicación
-			//window.localStorage.setItem('firstTimeApp',false);
-		//};
-	//}else {
-		//htmlTitleShow="home";
-		//getHtmlToShow();
-	//};
+	if(isFirstTimeApp()){
+		if(isOnInternet){
+			var dataContent=getUrlContent(mobileUrl+"mconfig.php");
+			alert(dataContent);
+			saveFileToSystem(title,format);
+
+		} else {
+			window.localStorage.setItem('firstTimeApp',false);
+			generateAlert("Sin Conexión","Se requiere internet la primera vez que inicialice la aplicación","Aceptar");
+			navigator.app.exitApp();
+		}
+	}else {
+	}
 }
 
 function getHtmlToShow(){
@@ -83,18 +91,22 @@ function getHtmlToShow(){
 			alert(fileEntry.toURL());
 			
 		}
-	
-	
-function saveFileToSystem() {
+
+
+
+function saveFileToSystem(title,extension) {
+	fileTitle=title;
+	fileExtension=extension;
+
     window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onFSSuccess, fail);
 }
 	function onFSSuccess(fileSystem) {
-		fileSystem.root.getFile(pathFileId+htmlTitle+".html", {create:true, exclusive:false}, gotFileEntry, fail);
+		fileSystem.root.getFile(pathFileId+fileTitle+"."+fileExtension, {create:true, exclusive:false}, gotFileEntry, fail);
 	}
 		function gotFileEntry(fileEntry) {
 			fileEntry.createWriter(gotFileWriter, fail);
 		}
 			function gotFileWriter(writer) {
 				writer.onwrite = function(evt) {};
-				writer.write(htmlToSave);
+				writer.write(fileContent);
 			}
