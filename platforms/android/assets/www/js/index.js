@@ -5,13 +5,13 @@ var mainUrl = "http://www.enibague.com/";
 var mobileUrl = "http://www.m.enibague.com/";
 var dfdObject = $.Deferred();
 
+var fileContent;
+var fileTitle;
+var fileExtension;
+var dataContent;
 
-var fileTitle="";
-var fileExtension="";
-var fileContent="";
-
-var loadTitle;
 var loadExtension;
+var loadTitle;
 
 function isOnInternet(){
 	if(navigator.connection.type=="Connection.NONE"){
@@ -87,20 +87,59 @@ function generateAlert(title,message,button){
 	);
 }
 
+/*
+function isVariableReady(variableToTest){
 
+	intervalVar = setInterval(function(){
+		if(variableToTest){
+			//la variable esta lista
+		}
+	}, 100);
+
+}
+ */
+
+function setConfigurationVariables(configuration){
+	window.localStorage.setItem('configurationAppVersion',configuration.AppVersion);
+	window.localStorage.setItem('configurationSiteName',configuration.siteName);
+	window.localStorage.setItem('configurationTheme',configuration.theme);
+	if(configuration.logo.imagen==1){
+		window.localStorage.setItem('configurationLogo',configuration.logo.logoUrl);
+	} else {
+		window.localStorage.setItem('configurationLogo',false);
+	}
+	window.localStorage.setItem('configurationMenuStyle',configuration.estiloMenu);
+	window.localStorage.setItem('configurationFooter',configuration.footer);
+}
 
 function onDeviceReady() {
 
 	setVisibleText("Telefono Listo");
 
 	if(isFirstTimeApp()){
+
+		setFileUrlServer();
+
 		if(isOnInternet){
 			//cargar home
 			//cargar articulos mientras se muestra el home
-			var dataContent=getUrlContent(mobileUrl+"mconfig.php");
+			dataContent=getUrlContent(mobileUrl+"mconfig.php");
+
 			if(dataContent!=false){
-				dfdObject.done(saveFileToSystem("config","json",dataContent)).done(loadFileFromSystem("config","json")).done(setVisibleText(loadFileContent));
-				dfdObject.resolve();
+				saveFileToSystem("config","json",dataContent);
+				var configuration = JSON.parse(dataContent);
+				setConfigurationVariables(configuration);
+
+				dataContent=getUrlContent(mobileUrl+"home.php");
+				if(dataContent!=false){
+					saveFileToSystem("home","json",dataContent);
+				} else {
+					setVisibleText("Imposible Conectar");
+					window.localStorage.setItem('firstTimeApp',false);
+					generateAlert("Imposible Conectar","No se puede conectar con nuestro servidor en este momento, intente más tarde","Aceptar");
+				}
+				//dfdObject.done(saveFileToSystem("config","json",dataContent));
+				//dfdObject.resolve();
 			} else {
 				setVisibleText("Imposible Conectar");
 				window.localStorage.setItem('firstTimeApp',false);
@@ -115,6 +154,7 @@ function onDeviceReady() {
 		}
 	}else {
 		if(isOnInternet){
+
 			loadFileFromSystem("config","json");
 			//cargar config movil, cargar config de internet y comparar versiones
 			//descargar nuevos si la version en linea es diferente
@@ -125,6 +165,8 @@ function onDeviceReady() {
 	}
 }
 
+
+
 function loadFileFromSystem(title,extension){
 	loadTitle=title;
 	loadExtension=extension;
@@ -133,16 +175,17 @@ function loadFileFromSystem(title,extension){
 
 }
 
-	function onFRSuccess(fileSystem) {
-		fileSystem.root.getFile(pathFileId+loadTitle+"."+loadExtension, {create:false, exclusive:false}, gotFileEntryToRead, fail);
-	}
+function onFRSuccess(fileSystem) {
+	fileSystem.root.getFile(pathFileId+loadTitle+"."+loadExtension, {create:false, exclusive:false}, gotFileEntryToRead, fail);
+}
 
-		function gotFileEntryToRead(fileEntry) {
-			setVisibleText("Obteniendo Archivo");
-			var dataContent=getUrlContent(fileEntry.toURL());
-			setVisibleText("Archivo Cargado");
-			setVisibleText(dataContent);
-		}
+function gotFileEntryToRead(fileEntry) {
+	setVisibleText("Obteniendo Archivo");
+	var dataContent=getUrlContent(fileEntry.toURL());
+	setVisibleText("Archivo Cargado");
+	setVisibleText(dataContent);
+}
+
 
 function saveFileToSystem(title,extension,content) {
 	setVisibleText("Guardando Archivo");
