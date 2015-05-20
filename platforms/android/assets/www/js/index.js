@@ -3,15 +3,7 @@ document.addEventListener('deviceready', onDeviceReady, false);
 var pathFileId = "Android/data/com.phonegap.helloworld/";
 var mainUrl = "http://www.enibague.com/";
 var mobileUrl = "http://www.m.enibague.com/";
-var dfdObject = $.Deferred();
-
-var fileContent;
-var fileTitle;
-var fileExtension;
 var dataContent;
-
-var loadExtension;
-var loadTitle;
 
 function isOnInternet(){
 	if(navigator.connection.type=="Connection.NONE"){
@@ -43,17 +35,17 @@ function getUrlContent(urlRequest){
 		success: function(data){
 			response = data;
 		},
-		error: function() { 
+		error: function() {
 			response = false;
 		}
 	});
-	
+
 	return response;
-	
+
 }
 
 function isFirstTimeApp(){
-	
+
 	var firstTimeApp;
 
 	if(window.localStorage.getItem('firstTimeApp') === undefined){
@@ -72,7 +64,7 @@ function isFirstTimeApp(){
 			return true;
 		}
 	}
-	
+
 }
 
 function generateAlert(title,message,button){
@@ -112,6 +104,34 @@ function setConfigurationVariables(configuration){
 	window.localStorage.setItem('configurationFooter',configuration.footer);
 }
 
+function showHome(dataContent){
+	setVisibleText("Se Mostrara el Home");
+
+	if(dataContent===undefined){
+		dataContent=getFileContentFromUrlServer("home","json")
+	}
+
+	setVisibleText("El datacontent se cargo");
+	setVisibleText(dataContent);
+
+	var home = JSON.parse(dataContent);
+	var homeHtmlString="";
+	for (var key in home) {
+		if (home.hasOwnProperty(key)) {
+			homeHtmlString+="<div>";
+			homeHtmlString+="<h1>"+key+"</h1>"; //este sera el titulo de la categoria
+			home[key].forEach(function(article) {
+				homeHtmlString+="<h2>"+article.post_title+"</h2>";
+				homeHtmlString+="<p>"+article.post_excerpt+"</p>";
+			});
+			homeHtmlString+="</div>"
+
+		}
+	}
+
+	$("#content").html(homeHtmlString);
+}
+
 function onDeviceReady() {
 
 	setVisibleText("Telefono Listo");
@@ -121,7 +141,7 @@ function onDeviceReady() {
 		setFileUrlServer();
 
 		if(isOnInternet){
-			//cargar home
+
 			//cargar articulos mientras se muestra el home
 			dataContent=getUrlContent(mobileUrl+"mconfig.php");
 
@@ -133,13 +153,13 @@ function onDeviceReady() {
 				dataContent=getUrlContent(mobileUrl+"home.php");
 				if(dataContent!=false){
 					saveFileToSystem("home","json",dataContent);
+					showHome(dataContent);
 				} else {
 					setVisibleText("Imposible Conectar");
 					window.localStorage.setItem('firstTimeApp',false);
 					generateAlert("Imposible Conectar","No se puede conectar con nuestro servidor en este momento, intente más tarde","Aceptar");
 				}
-				//dfdObject.done(saveFileToSystem("config","json",dataContent));
-				//dfdObject.resolve();
+
 			} else {
 				setVisibleText("Imposible Conectar");
 				window.localStorage.setItem('firstTimeApp',false);
@@ -154,56 +174,62 @@ function onDeviceReady() {
 		}
 	}else {
 		if(isOnInternet){
-
-			loadFileFromSystem("config","json");
+			dataContent=getUrlContent(mobileUrl+"mconfig.php");
+			showHome();
 			//cargar config movil, cargar config de internet y comparar versiones
 			//descargar nuevos si la version en linea es diferente
 			//descargar archivos faltantes
 		} else {
-			loadFileFromSystem("config","json");
+			showHome();
 		}
 	}
 }
 
 
+function getFileContentFromUrlServer(title,extension){
+	setVisibleText("Cargando archivo dentro del telefono");
+	var returnFileContent;
+	var urlToRequest=getFileUrlServer()+pathFileId+title+"."+extension;
+	returnFileContent= getUrlContent(urlToRequest);
+	return returnFileContent;
+}
 
-function loadFileFromSystem(title,extension){
-	loadTitle=title;
-	loadExtension=extension;
-	setVisibleText("Cargando Archivo");
+function getFileUrlServer(){
+	setVisibleText("Obteniendo URL Directorio")
+	return window.localStorage.getItem('directoryUrl');
+}
+
+function setFileUrlServer(){
+	setVisibleText("Cargando Directorio");
 	window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onFRSuccess, fail);
-
 }
 
 function onFRSuccess(fileSystem) {
-	fileSystem.root.getFile(pathFileId+loadTitle+"."+loadExtension, {create:false, exclusive:false}, gotFileEntryToRead, fail);
-}
-
-function gotFileEntryToRead(fileEntry) {
-	setVisibleText("Obteniendo Archivo");
-	var dataContent=getUrlContent(fileEntry.toURL());
-	setVisibleText("Archivo Cargado");
-	setVisibleText(dataContent);
+	setVisibleText("Guardando Variable Directorio");
+	window.localStorage.setItem('directoryUrl',fileSystem.root.toURL());
 }
 
 
 function saveFileToSystem(title,extension,content) {
 	setVisibleText("Guardando Archivo");
-	fileContent=content;
-	fileTitle=title;
-	fileExtension=extension;
 
-    window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, onFSSuccess, fail);
+    window.requestFileSystem(LocalFileSystem.PERSISTENT, 0, function(fileSystem){
+		onFSSuccess(fileSystem,content,title,extension);
+	}, fail);
 }
-	function onFSSuccess(fileSystem) {
-		fileSystem.root.getFile(pathFileId+fileTitle+"."+fileExtension, {create:true, exclusive:false}, gotFileEntry, fail);
+	function onFSSuccess(fileSystem,content,title,extension) {
+		fileSystem.root.getFile(pathFileId+title+"."+extension, {create:true, exclusive:false}, function(fileEntry){
+			gotFileEntry(fileEntry,content);
+		}, fail);
 	}
-		function gotFileEntry(fileEntry) {
-			fileEntry.createWriter(gotFileWriter, fail);
+		function gotFileEntry(fileEntry,content) {
+			fileEntry.createWriter(function(writer){
+				gotFileWriter(writer,content);
+			}, fail);
 		}
-			function gotFileWriter(writer) {
+			function gotFileWriter(writer,content) {
 				writer.onwrite = function(evt) {
 					setVisibleText("Archivo Escrito");
 				};
-				writer.write(fileContent);
+				writer.write(content);
 			}
