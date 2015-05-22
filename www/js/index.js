@@ -30,7 +30,7 @@ function getUrlContent(urlRequest){
 	var response = false;
 	$.ajax({
 		url: urlRequest,
-        async: false,
+		async: false,
 		cache: false,
 		success: function(data){
 			response = data;
@@ -104,6 +104,13 @@ function setConfigurationVariables(configuration){
 	window.localStorage.setItem('configurationFooter',configuration.footer);
 }
 
+function verifyDataContent(string){
+	string = string.replace(/\t/g, '');
+	return string;
+}
+
+
+
 function showHome(dataContent){
 	setVisibleText("Se Mostrara el Home");
 
@@ -112,15 +119,14 @@ function showHome(dataContent){
 	}
 
 	setVisibleText("El datacontent se cargo");
-
-	
-
+	dataContent = verifyDataContent(dataContent);
 	var home = JSON.parse(dataContent);
+
 	var homeHtmlString="";
 	for (var key in home) {
 		if (home.hasOwnProperty(key)) {
 			homeHtmlString+="<div>";
-			homeHtmlString+="<h1>"+key+"</h1>"; //este sera el titulo de la categoria
+			homeHtmlString+="<h1>"+key+"</h1>"; 
 			home[key].forEach(function(article) {
 				homeHtmlString+="<h2>"+article.post_title+"</h2>";
 				homeHtmlString+="<p>"+article.post_excerpt+"</p>";
@@ -131,6 +137,7 @@ function showHome(dataContent){
 	}
 
 	$("#content").html(homeHtmlString);
+
 }
 
 function onDeviceReady() {
