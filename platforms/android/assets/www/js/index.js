@@ -1,9 +1,9 @@
-document.addEventListener('deviceready', onDeviceReady, false);
-
 var pathFileId = "Android/data/com.phonegap.helloworld/";
 var mainUrl = "http://www.enibague.com/";
 var mobileUrl = "http://www.m.enibague.com/";
 var dataContent;
+var articlesToDownload = [];
+
 
 function isOnInternet(){
 	if(navigator.connection.type=="Connection.NONE"){
@@ -17,7 +17,8 @@ function isOnInternet(){
 
 function setVisibleText(message){
 	$("#error_js").html("");
-	$("#results").append(message+"<br/>");
+	$("#results").append('<div class="alert alert-info" role="alert">'+message+"</div>");
+
 }
 
 function fail(e) {
@@ -26,6 +27,9 @@ function fail(e) {
 }
 
 function getUrlContent(urlRequest){
+	if(!isOnInternet){
+		return false
+	}
 	setVisibleText("Se hizo peticion al servidor " + urlRequest);
 	var response = false;
 	$.ajax({
@@ -79,6 +83,10 @@ function generateAlert(title,message,button){
 	);
 }
 
+function loadStyle(){
+	$("head").append($('<link rel="stylesheet" href="css/'+window.localStorage.getItem('configurationTheme')+'.css" type="text/css" media="screen" />'));
+}
+
 /*
 function isVariableReady(variableToTest){
 
@@ -102,6 +110,9 @@ function setConfigurationVariables(configuration){
 	}
 	window.localStorage.setItem('configurationMenuStyle',configuration.estiloMenu);
 	window.localStorage.setItem('configurationFooter',configuration.footer);
+
+	loadStyle();
+
 }
 
 function verifyDataContent(string){
@@ -109,9 +120,39 @@ function verifyDataContent(string){
 	return string;
 }
 
+function printArticle(articleData){
+	articleData = verifyDataContent(articleData);
+	var article = JSON.parse(articleData);
+	var homeHtmlString = "";
+
+	homeHtmlString+='<div class="articleContentSingle" content-id="'+article.ID+'">';
+		homeHtmlString+="<h2>"+article.post_title+"</h2>";
+		homeHtmlString+="<p>"+article.post_content+"</p>";
+	homeHtmlString+="</div>";
+
+	$("#content").html(homeHtmlString);
+
+}
+
+function showArticle(articleID){
+	dataContent=getFileContentFromUrlServer("article"+articleID,"json");
+	if(dataContent==false){
+		if(isOnInternet()){
+			dataContent=getUrlContent(mobileUrl+"article.php?articleID="+articleID);
+			if(dataContent!=false){
+				saveFileToSystem("article"+articleID,"json",dataContent);
+				printArticle(dataContent);
+			}
+		} else {
+			generateAlert("Imposible Cargar Contenido","Este articulo no ha sido descargado, intente nuvemante cuando tenga conexión a Internet","Aceptar");
+		}
+	} else {
+		printArticle(dataContent);
+	}
+}
 
 
-function showHome(dataContent){
+function showMultipleContent(dataContent){
 	setVisibleText("Se Mostrara el Home");
 
 	if(dataContent===undefined){
@@ -121,23 +162,38 @@ function showHome(dataContent){
 	setVisibleText("El datacontent se cargo");
 	dataContent = verifyDataContent(dataContent);
 	var home = JSON.parse(dataContent);
-
 	var homeHtmlString="";
 	for (var key in home) {
 		if (home.hasOwnProperty(key)) {
-			homeHtmlString+="<div>";
-			homeHtmlString+="<h1>"+key+"</h1>"; 
+			homeHtmlString+='<div class="catTypesContainer">';
+			homeHtmlString+="<h1>"+key+"</h1>";
 			home[key].forEach(function(article) {
-				homeHtmlString+="<h2>"+article.post_title+"</h2>";
-				homeHtmlString+="<p>"+article.post_excerpt+"</p>";
+				articlesToDownload.push(article.ID);
+				homeHtmlString+='<div class="articleContentCategory" content-id="'+article.ID+'">';
+					homeHtmlString+="<h2>"+article.post_title+"</h2>";
+					homeHtmlString+="<p>"+article.post_excerpt+"</p>";
+				homeHtmlString+="</div>"
 			});
 			homeHtmlString+="</div>"
 
 		}
 	}
-
 	$("#content").html(homeHtmlString);
+	downloadArticles();
+}
 
+function downloadArticles(){
+	$.each(articlesToDownload,function(index,value){
+		setVisibleText("article to download, index: "+index+" , value: "+value);
+		dataContent=getFileContentFromUrlServer("article"+value,"json");
+		if(dataContent==false){
+			dataContent=getUrlContent(mobileUrl+"article.php?articleID="+value);
+			if(dataContent!=false){
+				saveFileToSystem("article"+value,"json",dataContent);
+			}
+		}
+	});
+	articlesToDownload=[];
 }
 
 function onDeviceReady() {
@@ -148,9 +204,8 @@ function onDeviceReady() {
 
 		setFileUrlServer();
 
-		if(isOnInternet){
 
-			//cargar articulos mientras se muestra el home
+		if(isOnInternet){
 			dataContent=getUrlContent(mobileUrl+"mconfig.php");
 
 			if(dataContent!=false){
@@ -161,7 +216,7 @@ function onDeviceReady() {
 				dataContent=getUrlContent(mobileUrl+"home.php");
 				if(dataContent!=false){
 					saveFileToSystem("home","json",dataContent);
-					showHome(dataContent);
+					showMultipleContent(dataContent);
 				} else {
 					setVisibleText("Imposible Conectar");
 					window.localStorage.setItem('firstTimeApp',false);
@@ -181,14 +236,17 @@ function onDeviceReady() {
 
 		}
 	}else {
+
+		loadStyle();
+
 		if(isOnInternet){
 			dataContent=getUrlContent(mobileUrl+"mconfig.php");
-			showHome();
+			showMultipleContent();
 			//cargar config movil, cargar config de internet y comparar versiones
 			//descargar nuevos si la version en linea es diferente
 			//descargar archivos faltantes
 		} else {
-			showHome();
+			showMultipleContent();
 		}
 	}
 }
@@ -203,7 +261,7 @@ function getFileContentFromUrlServer(title,extension){
 }
 
 function getFileUrlServer(){
-	setVisibleText("Obteniendo URL Directorio")
+	setVisibleText("Obteniendo URL Directorio");
 	return window.localStorage.getItem('directoryUrl');
 }
 
@@ -241,3 +299,9 @@ function saveFileToSystem(title,extension,content) {
 				};
 				writer.write(content);
 			}
+
+document.addEventListener('deviceready', onDeviceReady, false);
+
+$( "body" ).delegate( ".articleContentCategory", "click", function() {
+	showArticle($(this).attr("content-id"));
+});

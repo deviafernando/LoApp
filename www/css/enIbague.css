@@ -1,0 +1,16 @@
+#content .catTypesContainer h1 {
+    background: #02AEF0;
+    color: #fff;
+}
+
+.articleContentSingle, .articleContentCategory {
+    border-bottom: 2px solid #D2E4A3;
+}
+
+.articleContentSingle p, .articleContentCategory p {
+    color: #8D8C8C;
+}
+
+.articleContentSingle h2, .articleContentCategory h2 {
+    color: #99BF38;
+}

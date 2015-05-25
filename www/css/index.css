@@ -1,3 +1,42 @@
-body {
-	margin-top: 20px;
+body, html {
+	margin: 0;
+	padding: 0;
+	font-family: 'Open Sans', 'Droid Sans', 'Roboto', sans-serif;
+}
+
+#content {
+	padding: 0;
+	margin: 0;
+}
+
+#content .catTypesContainer h1 {
+	margin: 0;
+	font-size: 3em;
+	text-transform: uppercase;
+	padding: 5px 0;
+	text-align: center;
+}
+
+#content .catTypesContainer {
+	margin: 0;
+	padding: 0;
+}
+
+.articleContentSingle, .articleContentCategory {
+	padding: 10px 5%;
+	margin: 0 auto;
+}
+
+.articleContentSingle p, .articleContentCategory p {
+	font-size: 1.8em;
+	text-transform: capitalize;
+}
+
+.articleContentSingle h2,.articleContentCategory h2 {
+	text-transform: uppercase;
+	font-size: 2.4em;
+}
+
+#results {
+	display: none;
 }
