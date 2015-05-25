@@ -127,6 +127,7 @@ function printArticle(articleData){
 
 	homeHtmlString+='<div class="articleContentSingle" content-id="'+article.ID+'">';
 		homeHtmlString+="<h2>"+article.post_title+"</h2>";
+		homeHtmlString+='<img src="'+article.featured_image+'"/>';
 		homeHtmlString+="<p>"+article.post_content+"</p>";
 	homeHtmlString+="</div>";
 
@@ -171,6 +172,7 @@ function showMultipleContent(dataContent){
 				articlesToDownload.push(article.ID);
 				homeHtmlString+='<div class="articleContentCategory" content-id="'+article.ID+'">';
 					homeHtmlString+="<h2>"+article.post_title+"</h2>";
+					homeHtmlString+='<img src="'+article.featured_image+'"/>';
 					homeHtmlString+="<p>"+article.post_excerpt+"</p>";
 				homeHtmlString+="</div>"
 			});
