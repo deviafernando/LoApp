@@ -106,13 +106,51 @@ function setConfigurationVariables(configuration){
 	if(configuration.logo.imagen==1){
 		window.localStorage.setItem('configurationLogo',configuration.logo.logoUrl);
 	} else {
-		window.localStorage.setItem('configurationLogo',false);
+		window.localStorage.setItem('configurationLogo',"false");
 	}
 	window.localStorage.setItem('configurationMenuStyle',configuration.estiloMenu);
 	window.localStorage.setItem('configurationFooter',configuration.footer);
 
 	loadStyle();
+	setupHeader(configuration.menuItems);
+}
 
+function setupHeader(menuItems){
+	if(menuItems===undefined){
+		var configuration=getFileContentFromUrlServer("home","json");
+		configuration = JSON.parse(configuration);
+		menuItems = configuration.menuItems;
+	}
+
+	var logo = window.localStorage.getItem('configurationLogo')!="false";
+	var homeHtmlString = "";
+	var menuHtmlString="";
+
+
+		homeHtmlString+='<div id="logo">';
+		if(logo!="false"){
+			homeHtmlString+='<img src="'+logo+'"/>';
+		} else {
+			homeHtmlString+=window.localStorage.getItem('configurationSiteName');
+		}
+		homeHtmlString+='</div>';
+
+		$.each(menuItems,function(index,value){
+
+			homeHtmlString+='<a id="menu-activator" href="#sidr">Toggle menu</a>';
+
+			menuHtmlString+='<div id="Mainmenu">';
+				menuHtmlString+='<div class="menuItem" menu-name="'+value[0]+'" menu-type="'+value[2]+'">';
+					menuHtmlString+=value[1];
+				menuHtmlString+='</div>';
+			menuHtmlString+='</div>';
+
+			$("#sidr").html(menuHtmlString);
+		});
+
+
+	$('#menu-activator').sidr();
+	$("#header").prepend(homeHtmlString);
 }
 
 function verifyDataContent(string){
@@ -240,7 +278,7 @@ function onDeviceReady() {
 	}else {
 
 		loadStyle();
-
+		setupHeader();
 		if(isOnInternet){
 			dataContent=getUrlContent(mobileUrl+"mconfig.php");
 			showMultipleContent();
