@@ -3,6 +3,7 @@ var mainUrl = "http://www.enibague.com/";
 var mobileUrl = "http://www.m.enibague.com/";
 var dataContent;
 var articlesToDownload = [];
+var menusToDownload = [];
 
 
 function isOnInternet(){
@@ -27,9 +28,6 @@ function fail(e) {
 }
 
 function getUrlContent(urlRequest){
-	if(!isOnInternet){
-		return false
-	}
 	setVisibleText("Se hizo peticion al servidor " + urlRequest);
 	var response = false;
 	$.ajax({
@@ -117,15 +115,16 @@ function setConfigurationVariables(configuration){
 
 function setupHeader(menuItems){
 	if(menuItems===undefined){
-		var configuration=getFileContentFromUrlServer("home","json");
+		var configuration=getFileContentFromUrlServer("config","json");
 		configuration = JSON.parse(configuration);
 		menuItems = configuration.menuItems;
 	}
 
-	var logo = window.localStorage.getItem('configurationLogo')!="false";
+	var logo = window.localStorage.getItem('configurationLogo');
 	var homeHtmlString = "";
 	var menuHtmlString="";
 
+		homeHtmlString+='<a id="menu-activator" href="#sidr"></a>';
 
 		homeHtmlString+='<div id="logo">';
 		if(logo!="false"){
@@ -135,22 +134,26 @@ function setupHeader(menuItems){
 		}
 		homeHtmlString+='</div>';
 
+
+		menuHtmlString+='<div class="menuItemHome" menu-name="home" menu-type="home">';
+			menuHtmlString+='HOME';
+		menuHtmlString+='</div>';
+		
 		$.each(menuItems,function(index,value){
 
-			homeHtmlString+='<a id="menu-activator" href="#sidr">Toggle menu</a>';
-
-			menuHtmlString+='<div id="Mainmenu">';
-				menuHtmlString+='<div class="menuItem" menu-name="'+value[0]+'" menu-type="'+value[2]+'">';
+				menuHtmlString+='<div class="menuItem" menu-title="'+value[1]+'" menu-name="'+value[0]+'" menu-type="'+value[2]+'">';
+				menusToDownload.push(value);
 					menuHtmlString+=value[1];
 				menuHtmlString+='</div>';
-			menuHtmlString+='</div>';
+
 
 			$("#sidr").html(menuHtmlString);
 		});
 
-
-	$('#menu-activator').sidr();
 	$("#header").prepend(homeHtmlString);
+	$("#content").css("margin-top",$("#header").height());
+
+	$("#menu-activator").sidr();
 }
 
 function verifyDataContent(string){
@@ -165,12 +168,36 @@ function printArticle(articleData){
 
 	homeHtmlString+='<div class="articleContentSingle" content-id="'+article.ID+'">';
 		homeHtmlString+="<h2>"+article.post_title+"</h2>";
-		homeHtmlString+='<img src="'+article.featured_image+'"/>';
+		homeHtmlString+='<img class="img-responsive img-thumbnail" src="'+article.featured_image+'"/>';
 		homeHtmlString+="<p>"+article.post_content+"</p>";
+		homeHtmlString+='<br class="clear"/>';
 	homeHtmlString+="</div>";
 
 	$("#content").html(homeHtmlString);
 
+}
+
+function showCategory(menuName,menuTitle,menuType){
+
+	dataContent=getFileContentFromUrlServer(menuType+menuTitle,"json");
+	if(dataContent==false){
+		if(isOnInternet()){
+			if(menuType=="type"){
+				dataContent=getUrlContent(mobileUrl+"cat_type.php?type="+menuName+"&typeTitle="+menuTitle);
+			} else if(menuType=="cat") {
+				dataContent=getUrlContent(mobileUrl+"cat_type.php?category="+menuName+"&categoryTitle="+menuTitle);
+			}
+
+			if(dataContent!=false){
+				saveFileToSystem(menuType+menuTitle,"json",dataContent);
+				showMultipleContent(menuType+menuTitle,"json",dataContent);
+			}
+		} else {
+			generateAlert("Imposible Cargar Contenido","Este articulo no ha sido descargado, intente nuvemante cuando tenga conexión a Internet","Aceptar");
+		}
+	} else {
+		showMultipleContent(menuType+menuTitle,"json",dataContent);
+	}
 }
 
 function showArticle(articleID){
@@ -191,11 +218,11 @@ function showArticle(articleID){
 }
 
 
-function showMultipleContent(dataContent){
+function showMultipleContent(fileName,Extension,dataContent){
 	setVisibleText("Se Mostrara el Home");
 
 	if(dataContent===undefined){
-		dataContent=getFileContentFromUrlServer("home","json")
+		dataContent=getFileContentFromUrlServer(fileName,Extension);
 	}
 
 	setVisibleText("El datacontent se cargo");
@@ -220,6 +247,7 @@ function showMultipleContent(dataContent){
 	}
 	$("#content").html(homeHtmlString);
 	downloadArticles();
+	downloadMenus();
 }
 
 function downloadArticles(){
@@ -234,6 +262,29 @@ function downloadArticles(){
 		}
 	});
 	articlesToDownload=[];
+}
+
+function downloadMenus(){
+	$.each(menusToDownload,function(index,value){
+		setVisibleText("article to download, index: "+index+" , value: "+value[1]);
+
+		dataContent=getFileContentFromUrlServer(value[2]+value[1],"json");
+
+		if(dataContent==false){
+
+			if(value[2]=="type"){
+				dataContent=getUrlContent(mobileUrl+"cat_type.php?type="+value[0]+"&typeTitle="+value[1]);
+			} else if(value[2]=="cat") {
+				dataContent=getUrlContent(mobileUrl+"cat_type.php?category="+value[0]+"&categoryTitle="+value[1]);
+			}
+
+			if(dataContent!=false){
+				saveFileToSystem(value[2]+value[1],"json",dataContent);
+			}
+		}
+	});
+	menusToDownload=[];
+
 }
 
 function onDeviceReady() {
@@ -256,7 +307,7 @@ function onDeviceReady() {
 				dataContent=getUrlContent(mobileUrl+"home.php");
 				if(dataContent!=false){
 					saveFileToSystem("home","json",dataContent);
-					showMultipleContent(dataContent);
+					showMultipleContent("home","json",dataContent);
 				} else {
 					setVisibleText("Imposible Conectar");
 					window.localStorage.setItem('firstTimeApp',false);
@@ -280,13 +331,13 @@ function onDeviceReady() {
 		loadStyle();
 		setupHeader();
 		if(isOnInternet){
-			dataContent=getUrlContent(mobileUrl+"mconfig.php");
-			showMultipleContent();
+			//dataContent=getUrlContent(mobileUrl+"mconfig.php");
+			showMultipleContent("home","json");
 			//cargar config movil, cargar config de internet y comparar versiones
 			//descargar nuevos si la version en linea es diferente
 			//descargar archivos faltantes
 		} else {
-			showMultipleContent();
+			showMultipleContent("home","json");
 		}
 	}
 }
@@ -343,5 +394,17 @@ function saveFileToSystem(title,extension,content) {
 document.addEventListener('deviceready', onDeviceReady, false);
 
 $( "body" ).delegate( ".articleContentCategory", "click", function() {
+	setVisibleText("se hizo click en el articulo "+$(this).attr("content-id"));
 	showArticle($(this).attr("content-id"));
+});
+
+$( "body" ).delegate( ".menuItemHome", "click", function() {
+	showMultipleContent("home","json");
+});
+
+
+$( "body" ).delegate( ".menuItem", "click", function() {
+	setVisibleText("se hizo click en el menu "+$(this).attr("menu-name"));
+	showCategory($(this).attr("menu-name"),$(this).attr("menu-title"),$(this).attr("menu-type"));
+
 });
