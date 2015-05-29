@@ -6,6 +6,7 @@ var articlesToDownload = [];
 var menusToDownload = [];
 var breadcrumbsNavigation = [];
 var menuStatus=false;
+var readyToExit=false;
 
 function isOnInternet(){
 	if(navigator.connection.type=="Connection.NONE"){
@@ -85,18 +86,6 @@ function generateAlert(title,message,button){
 function loadStyle(){
 	$("head").append($('<link rel="stylesheet" href="css/'+window.localStorage.getItem('configurationTheme')+'.css" type="text/css" media="screen" />'));
 }
-
-/*
-function isVariableReady(variableToTest){
-
-	intervalVar = setInterval(function(){
-		if(variableToTest){
-			//la variable esta lista
-		}
-	}, 100);
-
-}
- */
 
 function setConfigurationVariables(configuration){
 	window.localStorage.setItem('configurationAppVersion',configuration.AppVersion);
@@ -427,13 +416,34 @@ $( "body" ).delegate( ".menuItem,.menuItemActive", "click", function() {
 
 });
 
+function showToast(message,duration){
+	$("#toast").html(message);
+	$("#toast").fadeToggle( (duration/2), function() {
+		$("#toast").fadeToggle( (duration/2), function() {
+
+		});
+	});
+}
 
 document.addEventListener("backbutton", function(){
 
 	setVisibleText(breadcrumbsNavigation.length);
 
 	if(breadcrumbsNavigation.length == 0 && menuStatus==false){
-		navigator.app.exitApp();
+		if(readyToExit) {
+			navigator.app.exitApp();
+		}
+
+		readyToExit=true;
+
+		showToast("Presione nuevamente atras para salir",4000);
+
+		setTimeout(function(){
+			readyToExit=false;
+		}, 4000);
+
+
+
 	} else {
 		if(menuStatus){
 			$.sidr('close', 'sidr');
