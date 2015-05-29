@@ -4,7 +4,8 @@ var mobileUrl = "http://www.m.enibague.com/";
 var dataContent;
 var articlesToDownload = [];
 var menusToDownload = [];
-
+var breadcrumbsNavigation = [];
+var menuStatus=false;
 
 function isOnInternet(){
 	if(navigator.connection.type=="Connection.NONE"){
@@ -153,7 +154,14 @@ function setupHeader(menuItems){
 	$("#header").prepend(homeHtmlString);
 	$("#content").css("margin-top",$("#header").height());
 
-	$("#menu-activator").sidr();
+	$("#menu-activator").sidr({
+		onOpen: function(){
+			menuStatus=true;
+		},
+		onClose: function(){
+			menuStatus=false;
+		}
+	});
 }
 
 function verifyDataContent(string){
@@ -395,16 +403,50 @@ document.addEventListener('deviceready', onDeviceReady, false);
 
 $( "body" ).delegate( ".articleContentCategory", "click", function() {
 	setVisibleText("se hizo click en el articulo "+$(this).attr("content-id"));
+	breadcrumbsNavigation.push([$(this).attr("content-id"),"article"]);
 	showArticle($(this).attr("content-id"));
 });
 
 $( "body" ).delegate( ".menuItemHome", "click", function() {
+	breadcrumbsNavigation = [];
 	showMultipleContent("home","json");
 });
 
 
 $( "body" ).delegate( ".menuItem", "click", function() {
 	setVisibleText("se hizo click en el menu "+$(this).attr("menu-name"));
+	breadcrumbsNavigation.push([$(this).attr("menu-type")+$(this).attr("menu-title"),"cat_type"]);
 	showCategory($(this).attr("menu-name"),$(this).attr("menu-title"),$(this).attr("menu-type"));
 
 });
+
+document.addEventListener("backbutton", function(){
+
+	setVisibleText(breadcrumbsNavigation.length);
+
+	if(breadcrumbsNavigation.length == 0 && menuStatus==false){
+		navigator.app.exitApp();
+	} else {
+		if(menuStatus){
+			$.sidr('close', 'sidr');
+			alert("close sidr");
+		} else {
+			breadcrumbsNavigation.pop();
+
+			if(breadcrumbsNavigation.length == 0){
+				setVisibleText("la longitud es 0");
+				showMultipleContent("home","json");
+			} else {
+
+				var lastPage = breadcrumbsNavigation[breadcrumbsNavigation.length-1];
+				setVisibleText("lastpage "+lastPage[0]);
+				if(lastPage[1]=="article"){
+					showArticle(lastPage[0],"json")
+				} else {
+					showMultipleContent(lastPage[0],"json")
+				};
+				//[["cat1213","category_type"],["Article123","article"]]
+			}
+		}
+	}
+}, false);
