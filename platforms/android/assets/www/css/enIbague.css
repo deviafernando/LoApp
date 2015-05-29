@@ -37,3 +37,7 @@
     color: #666666;
     border-bottom: 1px solid #999;
 }
+
+#sidr .activeMenuItem {
+    color: #99BF38;
+}

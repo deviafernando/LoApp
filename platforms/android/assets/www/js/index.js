@@ -408,17 +408,25 @@ $( "body" ).delegate( ".articleContentCategory", "click", function() {
 });
 
 $( "body" ).delegate( ".menuItemHome", "click", function() {
+
+	$(".activeMenuItem").removeClass("activeMenuItem");
+	$(this).addClass("activeMenuItem");
+
 	breadcrumbsNavigation = [];
 	showMultipleContent("home","json");
 });
 
 
-$( "body" ).delegate( ".menuItem", "click", function() {
-	setVisibleText("se hizo click en el menu "+$(this).attr("menu-name"));
+$( "body" ).delegate( ".menuItem,.menuItemActive", "click", function() {
+
+	$(".activeMenuItem").removeClass("activeMenuItem");
+	$(this).addClass("activeMenuItem");
+
 	breadcrumbsNavigation.push([$(this).attr("menu-type")+$(this).attr("menu-title"),"cat_type"]);
 	showCategory($(this).attr("menu-name"),$(this).attr("menu-title"),$(this).attr("menu-type"));
 
 });
+
 
 document.addEventListener("backbutton", function(){
 
@@ -429,17 +437,17 @@ document.addEventListener("backbutton", function(){
 	} else {
 		if(menuStatus){
 			$.sidr('close', 'sidr');
-			alert("close sidr");
+			setVisibleText("cerrar panel izquierdo");
 		} else {
 			breadcrumbsNavigation.pop();
 
 			if(breadcrumbsNavigation.length == 0){
-				setVisibleText("la longitud es 0");
+				setVisibleText("de vuelta al home");
 				showMultipleContent("home","json");
 			} else {
 
 				var lastPage = breadcrumbsNavigation[breadcrumbsNavigation.length-1];
-				setVisibleText("lastpage "+lastPage[0]);
+				setVisibleText("vamos a lastpage "+lastPage[0]);
 				if(lastPage[1]=="article"){
 					showArticle(lastPage[0],"json")
 				} else {
@@ -450,3 +458,4 @@ document.addEventListener("backbutton", function(){
 		}
 	}
 }, false);
+
