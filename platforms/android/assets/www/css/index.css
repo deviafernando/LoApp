@@ -2,6 +2,7 @@ body, html {
 	margin: 0;
 	padding: 0;
 	font-family: 'Open Sans', 'Droid Sans', 'Roboto', sans-serif;
+	min-height: 100%;
 }
 
 #content {
@@ -90,13 +91,39 @@ body, html {
 	background-color: rgba(0, 0, 0, 0.5);
 	color: rgba(255, 255, 255, 1);
 	padding: 0.5em;
-	position: absolute;
-	bottom: 10%;
-	margin-left: auto;
-	margin-right: auto;
-	left: 0;
-	right: 0;
+	position: fixed;
 	width: 80%;
+	left: 10%;
+	bottom: 10%;
+
 	border-radius: 25px;
 	text-align: center;
+}
+
+#loading {
+	background: #000 url("../img/loading.gif") no-repeat 50% 50%;
+	background-size: 80px 60px;
+	height: 100%;
+	width: 100%;
+	position: absolute;
+	top: 0;
+
+}
+
+
+#splashScreen {
+	background: #fff;
+	height: 100%;
+	width: 100%;
+	position: fixed;
+	top: 0;
+	text-align: center;
+}
+
+#splashScreen img {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	right: 0;
+	margin: 0 auto;
 }

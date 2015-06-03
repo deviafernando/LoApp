@@ -20,7 +20,7 @@ function isOnInternet(){
 
 function setVisibleText(message){
 	$("#error_js").html("");
-	$("#results").append('<div class="alert alert-info" role="alert">'+message+"</div>");
+	//$("#results").append('<div class="alert alert-info" role="alert">'+message+"</div>");
 
 }
 
@@ -53,17 +53,16 @@ function isFirstTimeApp(){
 	var firstTimeApp;
 
 	if(window.localStorage.getItem('firstTimeApp') === undefined){
-		window.localStorage.setItem('firstTimeApp',true);
+
 		setVisibleText("Es la primera vez");
 		return true;
 	} else {
 		firstTimeApp = window.localStorage.getItem('firstTimeApp');
 
-		if(firstTimeApp){
+		if(firstTimeApp=="true"){
 			setVisibleText("No Es la primera vez");
 			return false;
 		} else {
-			window.localStorage.setItem('firstTimeApp',true);
 			setVisibleText("Es la primera vez");
 			return true;
 		}
@@ -170,7 +169,7 @@ function printArticle(articleData){
 		homeHtmlString+='<br class="clear"/>';
 	homeHtmlString+="</div>";
 
-	$("#content").html(homeHtmlString);
+	changeContent(homeHtmlString);
 
 }
 
@@ -242,9 +241,16 @@ function showMultipleContent(fileName,Extension,dataContent){
 
 		}
 	}
-	$("#content").html(homeHtmlString);
+	changeContent(homeHtmlString);
 	downloadArticles();
 	downloadMenus();
+}
+
+function changeContent(htmlString){
+
+	$("#loading").css("display","none");
+
+	$("#content").html(htmlString);
 }
 
 function downloadArticles(){
@@ -284,7 +290,16 @@ function downloadMenus(){
 
 }
 
+function centerSplashScreen(){
+	setTimeout(function(){
+		$("#splashScreen").css("display","none");
+	}, 3000);
+
+}
+
 function onDeviceReady() {
+
+	centerSplashScreen();
 
 	setVisibleText("Telefono Listo");
 
@@ -305,6 +320,7 @@ function onDeviceReady() {
 				if(dataContent!=false){
 					saveFileToSystem("home","json",dataContent);
 					showMultipleContent("home","json",dataContent);
+					window.localStorage.setItem('firstTimeApp',true);
 				} else {
 					setVisibleText("Imposible Conectar");
 					window.localStorage.setItem('firstTimeApp',false);
