@@ -107,7 +107,7 @@ body, html {
 	width: 100%;
 	position: absolute;
 	top: 0;
-
+	display: none;
 }
 
 
@@ -122,8 +122,13 @@ body, html {
 
 #splashScreen img {
 	position: absolute;
-	top: 50%;
+	top: 40%;
 	left: 0;
 	right: 0;
 	margin: 0 auto;
+	max-height: 20%;
+}
+
+#splashScreen #splashLoading {
+	top: 60%;
 }

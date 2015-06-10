@@ -1,4 +1,7 @@
-var pathFileId = "Android/data/com.phonegap.helloworld/";
+$( document ).ready(function() {
+
+
+var pathFileId = "Android/data/com.imagina.enibague/";
 var mainUrl = "http://www.enibague.com/";
 var mobileUrl = "http://www.m.enibague.com/";
 var dataContent;
@@ -7,6 +10,7 @@ var menusToDownload = [];
 var breadcrumbsNavigation = [];
 var menuStatus=false;
 var readyToExit=false;
+
 
 function isOnInternet(){
 	if(navigator.connection.type=="Connection.NONE"){
@@ -87,7 +91,7 @@ function loadStyle(){
 }
 
 function setConfigurationVariables(configuration){
-	window.localStorage.setItem('configurationAppVersion',configuration.AppVersion);
+	window.localStorage.setItem('configurationAppVersion',configuration.appVersion);
 	window.localStorage.setItem('configurationSiteName',configuration.siteName);
 	window.localStorage.setItem('configurationTheme',configuration.theme);
 	if(configuration.logo.imagen==1){
@@ -127,7 +131,7 @@ function setupHeader(menuItems){
 		menuHtmlString+='<div class="menuItemHome" menu-name="home" menu-type="home">';
 			menuHtmlString+='HOME';
 		menuHtmlString+='</div>';
-		
+
 		$.each(menuItems,function(index,value){
 
 				menuHtmlString+='<div class="menuItem" menu-title="'+value[1]+'" menu-name="'+value[0]+'" menu-type="'+value[2]+'">';
@@ -139,7 +143,8 @@ function setupHeader(menuItems){
 			$("#sidr").html(menuHtmlString);
 		});
 
-	$("#header").prepend(homeHtmlString);
+
+	$("#header").html(homeHtmlString);
 	$("#content").css("margin-top",$("#header").height());
 
 	$("#menu-activator").sidr({
@@ -150,6 +155,9 @@ function setupHeader(menuItems){
 			menuStatus=false;
 		}
 	});
+
+	downloadMenus();
+
 }
 
 function verifyDataContent(string){
@@ -243,12 +251,9 @@ function showMultipleContent(fileName,Extension,dataContent){
 	}
 	changeContent(homeHtmlString);
 	downloadArticles();
-	downloadMenus();
 }
 
 function changeContent(htmlString){
-
-	$("#loading").css("display","none");
 
 	$("#content").html(htmlString);
 }
@@ -257,7 +262,8 @@ function downloadArticles(){
 	$.each(articlesToDownload,function(index,value){
 		setVisibleText("article to download, index: "+index+" , value: "+value);
 		dataContent=getFileContentFromUrlServer("article"+value,"json");
-		if(dataContent==false){
+		var downloadAgain = window.localStorage.getItem("versionDownloadAgain");
+		if(dataContent==false || downloadAgain=="true"){
 			dataContent=getUrlContent(mobileUrl+"article.php?articleID="+value);
 			if(dataContent!=false){
 				saveFileToSystem("article"+value,"json",dataContent);
@@ -268,12 +274,14 @@ function downloadArticles(){
 }
 
 function downloadMenus(){
+
 	$.each(menusToDownload,function(index,value){
 		setVisibleText("article to download, index: "+index+" , value: "+value[1]);
 
 		dataContent=getFileContentFromUrlServer(value[2]+value[1],"json");
 
-		if(dataContent==false){
+		var downloadAgain = window.localStorage.getItem("versionDownloadAgain");
+		if(dataContent==false || downloadAgain=="true"){
 
 			if(value[2]=="type"){
 				dataContent=getUrlContent(mobileUrl+"cat_type.php?type="+value[0]+"&typeTitle="+value[1]);
@@ -287,26 +295,24 @@ function downloadMenus(){
 		}
 	});
 	menusToDownload=[];
+	window.localStorage.setItem("versionDownloadAgain","false");
 
 }
 
-function centerSplashScreen(){
+function hideSplashScreen(){
 	setTimeout(function(){
 		$("#splashScreen").css("display","none");
-	}, 3000);
-
+	}, 5000);
 }
 
 function onDeviceReady() {
-
-	centerSplashScreen();
 
 	setVisibleText("Telefono Listo");
 
 	if(isFirstTimeApp()){
 
 		setFileUrlServer();
-
+		window.localStorage.setItem("versionDownloadAgain","false");
 
 		if(isOnInternet){
 			dataContent=getUrlContent(mobileUrl+"mconfig.php");
@@ -317,6 +323,7 @@ function onDeviceReady() {
 				setConfigurationVariables(configuration);
 
 				dataContent=getUrlContent(mobileUrl+"home.php");
+				hideSplashScreen();
 				if(dataContent!=false){
 					saveFileToSystem("home","json",dataContent);
 					showMultipleContent("home","json",dataContent);
@@ -334,6 +341,7 @@ function onDeviceReady() {
 			}
 
 		} else {
+			hideSplashScreen();
 			window.localStorage.setItem('firstTimeApp',false);
 			generateAlert("Sin Conexión","Se requiere internet la primera vez que inicialice la aplicación","Aceptar");
 			navigator.app.exitApp();
@@ -343,12 +351,26 @@ function onDeviceReady() {
 
 		loadStyle();
 		setupHeader();
+		hideSplashScreen();
+
 		if(isOnInternet){
-			//dataContent=getUrlContent(mobileUrl+"mconfig.php");
 			showMultipleContent("home","json");
-			//cargar config movil, cargar config de internet y comparar versiones
-			//descargar nuevos si la version en linea es diferente
-			//descargar archivos faltantes
+
+			var dataContent=getUrlContent(mobileUrl+"mconfig.php");
+			if(dataContent!=false){
+				var configuration = JSON.parse(dataContent);
+				var downloadAgain = window.localStorage.getItem("versionDownloadAgain");
+				if((configuration.appVersion.toString()!=window.localStorage.getItem('configurationAppVersion')) || (window.localStorage.getItem("versionDownloadAgain")=="true")){
+					window.localStorage.setItem("versionDownloadAgain","true");
+					dataContent=getUrlContent(mobileUrl+"home.php");
+					if(dataContent!=false){
+						saveFileToSystem("home","json",dataContent);
+						showMultipleContent("home","json",dataContent);
+						setConfigurationVariables(configuration);
+					}
+				}
+
+			}
 		} else {
 			showMultipleContent("home","json");
 		}
@@ -409,10 +431,12 @@ document.addEventListener('deviceready', onDeviceReady, false);
 $( "body" ).delegate( ".articleContentCategory", "click", function() {
 	setVisibleText("se hizo click en el articulo "+$(this).attr("content-id"));
 	breadcrumbsNavigation.push([$(this).attr("content-id"),"article"]);
+
 	showArticle($(this).attr("content-id"));
 });
 
 $( "body" ).delegate( ".menuItemHome", "click", function() {
+
 
 	$(".activeMenuItem").removeClass("activeMenuItem");
 	$(this).addClass("activeMenuItem");
@@ -458,8 +482,6 @@ document.addEventListener("backbutton", function(){
 			readyToExit=false;
 		}, 4000);
 
-
-
 	} else {
 		if(menuStatus){
 			$.sidr('close', 'sidr');
@@ -485,3 +507,5 @@ document.addEventListener("backbutton", function(){
 	}
 }, false);
 
+
+});
