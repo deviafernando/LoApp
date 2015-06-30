@@ -8,6 +8,113 @@ var menusToDownload = [];
 var breadcrumbsNavigation = [];
 var menuStatus=false;
 var readyToExit=false;
+var contentLoadingTimeOut;
+var pushNotification;
+
+function setUpNotifications() {
+
+	try
+	{
+		pushNotification = window.plugins.pushNotification;
+
+		if (device.platform == 'android' || device.platform == 'Android' || device.platform == 'amazon-fireos' ) {
+			pushNotification.register(successHandler, errorHandler, {"senderID":"583978535652","ecb":"onNotification"});
+		} else {
+			pushNotification.register(tokenHandler, errorHandler, {"badge":"true","sound":"true","alert":"true","ecb":"onNotificationAPN"});
+		}
+	}
+	catch(err)
+	{
+		txt="There was an error on this page.\n\n";
+		txt+="Error description: " + err.message + "\n\n";
+		setVisibleText(txt);
+	}
+}
+
+// handle APNS notifications for iOS
+function onNotificationAPN(e) {
+	if (e.alert) {
+		navigator.notification.alert(e.alert);
+	}
+
+	if (e.sound) {
+		var snd = new Media(e.sound);
+		snd.play();
+	}
+
+	if (e.badge) {
+		pushNotification.setApplicationIconBadgeNumber(successHandler, e.badge);
+	}
+}
+
+// handle GCM notifications for Android
+function onNotification(e) {
+	setVisibleText('<li>EVENT -> RECEIVED:' + e.event + '</li>');
+
+	switch( e.event )
+	{
+		case 'registered':
+			if ( e.regid.length > 0 )
+			{
+				setVisibleText('<li>REGISTERED -> REGID:' + e.regid + "</li>");
+				console.log("regID = " + e.regid);
+				//TODO e.regid to send and save
+			}
+			break;
+
+		case 'message':
+			if (e.foreground)
+			{
+				setVisibleText('<li>--INLINE NOTIFICATION--' + '</li>');
+				var soundfile = e.soundname || e.payload.sound;
+				var my_media = new Media("/android_asset/www/"+ soundfile);
+
+				my_media.play();
+			}
+			else
+			{
+				if (e.coldstart)
+					setVisibleText('<li>--COLDSTART NOTIFICATION--' + '</li>');
+				else
+					setVisibleText('<li>--BACKGROUND NOTIFICATION--' + '</li>');
+			}
+
+			setVisibleText('<li>MESSAGE -> MSG: ' + e.payload.message + '</li>');
+			//android only
+			setVisibleText('<li>MESSAGE -> MSGCNT: ' + e.payload.msgcnt + '</li>');
+			//amazon-fireos only
+			setVisibleText('<li>MESSAGE -> TIMESTAMP: ' + e.payload.timeStamp + '</li>');
+			break;
+
+		case 'error':
+			setVisibleText('<li>ERROR -> MSG:' + e.msg + '</li>');
+			break;
+
+		default:
+			setVisibleText('<li>EVENT -> Unknown, an event was received and we do not know what it is</li>');
+			break;
+	}
+}
+
+function tokenHandler (result) {
+	setVisibleText('<li>token: '+ result +'</li>');
+	// Your iOS push server needs to know the token before it can push to this device
+	// here is where you might want to send it the token for later use.
+}
+
+function successHandler (result) {
+	setVisibleText('<li>success:'+ result +'</li>');
+}
+
+function errorHandler (error) {
+	setVisibleText('<li>error:'+ error +'</li>');
+}
+
+
+
+
+
+
 
 
 function isOnInternet(){
@@ -40,6 +147,11 @@ function firstTimeHome(data){
 function firstTimeConfiguration(data){
 	saveFileToSystem("config","json",data);
 	var configuration = JSON.parse(data);
+
+	if(isFirstTimeApp()) {
+		window.localStorage.setItem('configurationAppVersionLast',configuration.appVersion);
+	}
+
 	setConfigurationVariables(configuration);
 	requestUrlContent(mobileUrl+"home.php","FirstTimeHome",true);
 }
@@ -51,8 +163,9 @@ function setUpMenuItems(data){
 
 function compareConfiguration(data){
 	var configuration = JSON.parse(data);
-	if((configuration.appVersion.toString()!=window.localStorage.getItem('configurationAppVersion')) || (window.localStorage.getItem("versionDownloadAgain")=="true")){
+	if(configuration.appVersion.toString()!=window.localStorage.getItem('configurationAppVersion')){
 		window.localStorage.setItem("versionDownloadAgain","true");
+		window.localStorage.setItem('configurationAppVersionLast',configuration.appVersion);
 		requestUrlContent(mobileUrl+"home.php","FirstTimeHome",false);
 		setConfigurationVariables(configuration);
 	}
@@ -62,7 +175,6 @@ function menuContentDownload(fileExist,value){
 	var downloadAgain = window.localStorage.getItem("versionDownloadAgain");
 
 	if(!fileExist || downloadAgain=="true"){
-
 		if(value[2]=="type"){
 			requestUrlContent(mobileUrl+"cat_type.php?type="+value[0]+"&typeTitle="+value[1],"CatTypeDownload",false,value);
 		} else if(value[2]=="cat") {
@@ -168,6 +280,7 @@ function catTypeShowError(value){
 }
 
 function catTypeDownloadAndShowError(){
+
 	generateAlert("Imposible Cargar Contenido","No se ha podido conectar verifique su conexión a Internet","Aceptar");
 }
 
@@ -185,6 +298,7 @@ function downloadShowArticleError(articleID,t){
 	if(isOnInternet() && t!="timeout"){
 		requestUrlContent(mobileUrl+"article.php?articleID="+articleID,"DownloadShowArticle",true,articleID);
 	} else {
+		
 		generateAlert("Imposible Cargar Contenido","No se ha podido conectar verifique su conexión a Internet","Aceptar");
 	}
 }
@@ -247,7 +361,6 @@ function isFirstTimeApp(){
 
 	var firstTimeApp;
 	if(window.localStorage.getItem('firstTimeApp') === undefined){
-
 		setVisibleText("Es la primera vez");
 		return true;
 	} else {
@@ -367,6 +480,7 @@ function printArticle(articleData){
 	homeHtmlString+="</div>";
 
 	changeContent(homeHtmlString);
+	changeContentLoading(false);
 	return true;
 }
 
@@ -402,6 +516,7 @@ function printMultipleContent(data){
 		}
 	}
 	changeContent(homeHtmlString);
+	changeContentLoading(false);
 	downloadArticles();
 }
 
@@ -432,11 +547,10 @@ function downloadArticles(){
 function downloadMenus(){
 
 	$.each(menusToDownload,function(index,value){
-		setVisibleText("article to download, index: "+index+" , value: "+value[1]);
+		setVisibleText("Menu to download, index: "+index+" , value: "+value[1]);
 		requestFileContentFromUrlServer(value[2]+value[1],"json","menuContentDownload",true,value);
 	});
 	menusToDownload=[];
-	window.localStorage.setItem("versionDownloadAgain","false");
 	return true;
 }
 
@@ -450,13 +564,14 @@ function hideSplashScreen(){
 function onDeviceReady() {
 
 	setVisibleText("Telefono Listo");
+	setUpNotifications();
 
 	if(isFirstTimeApp()){
 
 		setFileUrlServer();
 		window.localStorage.setItem("versionDownloadAgain","false");
 
-		if(isOnInternet){
+		if(isOnInternet()){
 			requestUrlContent(mobileUrl+"mconfig.php","FirstTimeConfiguration",false);
 		} else {
 			hideSplashScreen();
@@ -466,7 +581,10 @@ function onDeviceReady() {
 		}
 
 	} else {
-
+		if(window.localStorage.getItem("versionDownloadAgain")=="true"){
+			window.localStorage.setItem('configurationAppVersionLast',window.localStorage.getItem("configurationAppVersion"));
+			window.localStorage.setItem("versionDownloadAgain","false");
+		}
 
 		loadStyle();
 		setupHeader();
@@ -474,7 +592,7 @@ function onDeviceReady() {
 		hideSplashScreen();
 		showMultipleContent("home","json");
 
-		if(isOnInternet){
+		if(isOnInternet()){
 			requestUrlContent(mobileUrl+"mconfig.php","CompareConfiguration",false);
 		}
 	}
@@ -539,29 +657,36 @@ function saveFileToSystem(title,extension,content) {
 				return true;
 			}
 
+function changeContentLoading(isLoading){
+	if(isLoading){
+		contentLoadingTimeOut = setTimeout(function(){
+			$("#loading").css("display","block");
+		}, 500);
+	} else {
+		clearTimeout(contentLoadingTimeOut);
+		$("#loading").css("display","none");
+	}
+}
+
 $( "body" ).delegate( ".articleContentCategory", "click", function() {
+	changeContentLoading(true);
 	setVisibleText("se hizo click en el articulo "+$(this).attr("content-id"));
 	breadcrumbsNavigation.push([$(this).attr("content-id"),"article"]);
-
 	showArticle($(this).attr("content-id"));
 	return true;
 });
 
 $( "body" ).delegate( ".menuItemHome", "click", function() {
-
-
 	$(".activeMenuItem").removeClass("activeMenuItem");
 	$(this).addClass("activeMenuItem");
-
 	breadcrumbsNavigation = [];
 	showMultipleContent("home","json");
 	return true;
 });
 $( "body" ).delegate( ".menuItem,.menuItemActive", "click", function() {
-
+	changeContentLoading(true);
 	$(".activeMenuItem").removeClass("activeMenuItem");
 	$(this).addClass("activeMenuItem");
-
 	breadcrumbsNavigation.push([$(this).attr("menu-type")+$(this).attr("menu-title"),"cat_type"]);
 	showCategory($(this).attr("menu-name"),$(this).attr("menu-title"),$(this).attr("menu-type"));
 	return true;
