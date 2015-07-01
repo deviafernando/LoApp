@@ -1,5 +1,3 @@
-$( document ).ready(function() {
-
 var pathFileId = "Android/data/com.imagina.enibague/";
 var mainUrl = "http://www.enibague.com/";
 var mobileUrl = "http://www.m.enibague.com/";
@@ -60,7 +58,7 @@ function compareConfiguration(data){
 	if(configuration.appVersion.toString()!=window.localStorage.getItem('configurationAppVersion')){
 		window.localStorage.setItem("versionDownloadAgain","true");
 		window.localStorage.setItem('configurationAppVersionLast',configuration.appVersion);
-		requestUrlContent(mobileUrl+"home.php","FirstTimeHome",false);
+		requestUrlContent(mobileUrl+"home.php","catTypeDownload",false);
 		setConfigurationVariables(configuration);
 	}
 }
@@ -71,8 +69,10 @@ function menuContentDownload(fileExist,value){
 	if(!fileExist || downloadAgain=="true"){
 		if(value[2]=="type"){
 			requestUrlContent(mobileUrl+"cat_type.php?type="+value[0]+"&typeTitle="+value[1],"CatTypeDownload",false,value);
-		} else if(value[2]=="cat") {
+		} else if(value[2]=="category") {
 			requestUrlContent(mobileUrl+"cat_type.php?category="+value[0]+"&categoryTitle="+value[1],"CatTypeDownload",false,value);
+		} else if(value[2]=="subcategories") {
+			requestUrlContent(mobileUrl+"subcategory.php?category="+value[0]+"&categoryTitle="+value[1],"subCategoryDownload",false,value);
 		}
 	}
 }
@@ -81,8 +81,27 @@ function catTypeDownload(data,value){
 	saveFileToSystem(value[2]+value[1],"json",data);
 }
 
-function catTypeShow(data,value){
+function catTypeDownloadAndShowAgain(data,value){
+	saveFileToSystem(value[2]+value[1],"json",data);
 	showMultipleContent(value[2]+value[1],"json",data);
+}
+function catTypeShow(data,value){
+	var downloadAgain = window.localStorage.getItem("versionDownloadAgain");
+	if(downloadAgain=="true" && isOnInternet()){
+		if(value[2]=="type"){
+			requestUrlContent(mobileUrl+"cat_type.php?type="+value[0]+"&typeTitle="+value[1],"CatTypeDownloadAndShowAgain",false,value);
+		} else if(value[2]=="category") {
+			requestUrlContent(mobileUrl+"cat_type.php?category="+value[0]+"&categoryTitle="+value[1],"CatTypeDownloadAndShowAgain",false,value);
+		} else if(value[2]=="subcategories") {
+			requestUrlContent(mobileUrl+"subcategory.php?category="+value[0]+"&categoryTitle="+value[1],"subCatTypeDownloadAndShowAgain",false,value);
+		}
+	}
+
+	if(value[2]=="subcategories"){
+		showMultipleCategories(value[2]+value[1],"json",data);
+	} else {
+		showMultipleContent(value[2]+value[1],"json",data);
+	}
 }
 
 function articleDownload(data,articleID){
@@ -124,6 +143,11 @@ function ajaxSuccess(data, typePetition,value){
 			case "menuContentDownload":
 				menuContentDownload(true,value);
 				break;
+			case "subCatTypeDownloadAndShowAgain":
+			case "CatTypeDownloadAndShowAgain":
+				catTypeDownloadAndShowAgain(data,value);
+				break;
+			case "subCategoryDownload":
 			case "CatTypeDownload":
 				catTypeDownload(data,value);
 				break;
@@ -136,6 +160,9 @@ function ajaxSuccess(data, typePetition,value){
 				break;
 			case "Configuration":
 				setUpMenuItems(data);
+				break;
+			case "MultipleCategories":
+				printMultipleCategories(data);
 				break;
 			case "MultipleContent":
 				printMultipleContent(data);
@@ -165,8 +192,10 @@ function catTypeShowError(value){
 	if(isOnInternet()){
 		if(value[2]=="type"){
 			requestUrlContent(mobileUrl+"cat_type.php?type="+value[0]+"&typeTitle="+value[1],"CatTypeDownloadAndShow",false,value);
-		} else if(value[2]=="cat") {
+		} else if(value[2]=="category") {
 			requestUrlContent(mobileUrl+"cat_type.php?category="+value[0]+"&categoryTitle="+value[1],"CatTypeDownloadAndShow",false,value);
+		} else if(value[2]=="subcategories") {
+			requestUrlContent(mobileUrl+"subcategory.php?category="+value[0]+"&categoryTitle="+value[1],"CatTypeDownloadAndShow",false,value);
 		}
 	} else {
 		generateAlert("Imposible Cargar Contenido","Este articulo no ha sido descargado, intente nuvemante cuando tenga conexión a Internet","Aceptar");
@@ -174,7 +203,6 @@ function catTypeShowError(value){
 }
 
 function catTypeDownloadAndShowError(){
-
 	generateAlert("Imposible Cargar Contenido","No se ha podido conectar verifique su conexión a Internet","Aceptar");
 }
 
@@ -182,10 +210,6 @@ function articleVerificationError(articleID){
 	if(isOnInternet() && articleID!=false){
 		requestUrlContent(mobileUrl+"article.php?articleID="+articleID,"ArticleDownload",true,articleID);
 	}
-}
-
-function downloadAgainError(articleID){
-	requestFileContentFromUrlServer("article"+articleID,"json","DownloadShowArticle",true);
 }
 
 function downloadShowArticleError(articleID,t){
@@ -219,15 +243,14 @@ function ajaxError(typePetition,value,t){
 			articleVerificationError(value);
 			break;
 		case "DownloadShowArticle":
-			downloadShowArticleError(value,t)
+			downloadShowArticleError(value,t);
 			break;
 		case "DownloadAgain":
-			downloadAgainError(value);
-			break;
 		case "ArticleDownload":
 		case "Configuration":
 		case "CompareConfiguration":
 		case "CatTypeDownload":
+		case "subCategoryDownload":
 		default:
 			break;
 	}
@@ -310,7 +333,6 @@ function setupHeader(menuItems){
 	if(menuItems===undefined){
 		requestFileContentFromUrlServer("config","json","Configuration",true);
 	} else {
-
 		var logo = window.localStorage.getItem('configurationLogo');
 		var homeHtmlString = "";
 		var menuHtmlString="";
@@ -327,8 +349,9 @@ function setupHeader(menuItems){
 
 
 		menuHtmlString+='<div class="menuItemHome" menu-name="home" menu-type="home">';
-			menuHtmlString+='HOME';
+			menuHtmlString+='INICIO';
 		menuHtmlString+='</div>';
+
 
 		$.each(menuItems,function(index,value){
 				menuHtmlString+='<div class="menuItem" menu-title="'+value[1]+'" menu-name="'+value[0]+'" menu-type="'+value[2]+'">';
@@ -388,6 +411,43 @@ function showArticle(articleID){
 	return true;
 }
 
+function printMultipleCategories(data){
+	setVisibleText("El datacontent se cargo");
+
+	data= verifyDataContent(data);
+	var home = JSON.parse(data);
+	var homeHtmlString="";
+
+	for (var key in home) {
+		if (home.hasOwnProperty(key)) {
+			homeHtmlString+='<div class="catTypesContainer">';
+			homeHtmlString+="<h1>"+key+"</h1>";
+			homeHtmlString+='<div class="row">';
+			var i=0;
+			home[key].forEach(function(category) {
+				i++;
+
+				menusToDownload.push([category.ID,category.cat_title,category.cat_type]);
+
+				homeHtmlString+='<div class="subcategoryContentCategory col-sm-2" cat-title="'+category.cat_title+'" cat-type="'+category.cat_type+'" cat-id="'+category.ID+'">';
+					homeHtmlString+="<h2>"+category.cat_title+"</h2>";
+				homeHtmlString+="</div>";
+
+				if(i%2==0){
+					homeHtmlString+='<div class="row">';
+					homeHtmlString+="</div>";
+				}
+
+			});
+			homeHtmlString+="</div>";
+			homeHtmlString+="</div>";
+		}
+	}
+	changeContent(homeHtmlString);
+	changeContentLoading(false);
+	downloadMenus();
+}
+
 function printMultipleContent(data){
 	setVisibleText("El datacontent se cargo");
 
@@ -404,6 +464,7 @@ function printMultipleContent(data){
 				homeHtmlString+="<h2>"+article.post_title+"</h2>";
 				homeHtmlString+='<img src="'+article.featured_image+'"/>';
 				homeHtmlString+="<p>"+article.post_excerpt+"</p>";
+				homeHtmlString+='<br class="clear" />';
 				homeHtmlString+="</div>";
 			});
 			homeHtmlString+="</div>";
@@ -414,8 +475,17 @@ function printMultipleContent(data){
 	downloadArticles();
 }
 
+function showMultipleCategories(fileName,Extension,data){
+	setVisibleText("Se Mostrara un contenido multiple de categorias");
+	if(data===undefined){
+		requestFileContentFromUrlServer(fileName,Extension,"MultipleCategories",false);
+	} else {
+		printMultipleCategories(data);
+	}
+}
+
 function showMultipleContent(fileName,Extension,data){
-	setVisibleText("Se Mostrara el Home");
+	setVisibleText("Se Mostrara un contenido multiple");
 
 	if(data===undefined){
 		requestFileContentFromUrlServer(fileName,Extension,"MultipleContent",false);
@@ -562,6 +632,14 @@ function changeContentLoading(isLoading){
 	}
 }
 
+$( "body" ).delegate( ".subcategoryContentCategory", "click", function() {
+	changeContentLoading(true);
+	breadcrumbsNavigation.push([$(this).attr("cat-type")+$(this).attr("cat-title"),$(this).attr("cat-type")]);
+	showCategory($(this).attr("cat-id"),$(this).attr("cat-title"),$(this).attr("cat-type"));
+
+	return true;
+});
+
 $( "body" ).delegate( ".articleContentCategory", "click", function() {
 	changeContentLoading(true);
 	setVisibleText("se hizo click en el articulo "+$(this).attr("content-id"));
@@ -581,8 +659,10 @@ $( "body" ).delegate( ".menuItem,.menuItemActive", "click", function() {
 	changeContentLoading(true);
 	$(".activeMenuItem").removeClass("activeMenuItem");
 	$(this).addClass("activeMenuItem");
-	breadcrumbsNavigation.push([$(this).attr("menu-type")+$(this).attr("menu-title"),"cat_type"]);
+
+	breadcrumbsNavigation.push([$(this).attr("menu-type")+$(this).attr("menu-title"),$(this).attr("menu-type")]);
 	showCategory($(this).attr("menu-name"),$(this).attr("menu-title"),$(this).attr("menu-type"));
+
 	return true;
 });
 
@@ -629,9 +709,11 @@ document.addEventListener("backbutton", function(){
 				setVisibleText("vamos a lastpage "+lastPage[0]);
 				if(lastPage[1]=="article"){
 					showArticle(lastPage[0],"json")
+				} else if(lastPage[1]=="subcategories") {
+					showMultipleCategories(lastPage[0],"json");
 				} else {
 					showMultipleContent(lastPage[0],"json")
-				};
+				}
 			}
 		}
 	}
@@ -640,142 +722,146 @@ document.addEventListener("backbutton", function(){
 
 document.addEventListener('deviceready', onDeviceReady, false);
 
-return true;
+	//NOTIFICATIONS
+	var pushNotification;
 
-});
+	function setNotificationVisibleText(message){
+		//$("#debuger").append(message);
+	}
 
-//NOTIFICATIONS
-var pushNotification;
+	function setUpNotifications() {
+		setNotificationVisibleText('<li>deviceready event received</li>');
 
-function setNotificationVisibleText(message){
-	//$("#debuger").append(message);
-}
-
-function setUpNotifications() {
-	setNotificationVisibleText('<li>deviceready event received</li>');
-
-	try
-	{
-		pushNotification = window.plugins.pushNotification;
-		setNotificationVisibleText('<li>registering ' + device.platform + '</li>');
-		if (device.platform == 'android' || device.platform == 'Android' || device.platform == 'amazon-fireos' ) {
-			pushNotification.register(successHandler, errorHandler, {"senderID":"183128038002","ecb":"onNotification"});
-		} else {
-			pushNotification.register(tokenHandler, errorHandler, {"badge":"true","sound":"true","alert":"true","ecb":"onNotificationAPN"});	// required!
+		try
+		{
+			pushNotification = window.plugins.pushNotification;
+			setNotificationVisibleText('<li>registering ' + device.platform + '</li>');
+			if (device.platform == 'android' || device.platform == 'Android' || device.platform == 'amazon-fireos' ) {
+				pushNotification.register(successHandler, errorHandler, {"senderID":"183128038002","ecb":"onNotification"});
+			} else {
+				pushNotification.register(tokenHandler, errorHandler, {"badge":"true","sound":"true","alert":"true","ecb":"onNotificationAPN"});	// required!
+			}
+		}
+		catch(err)
+		{
+			txt="There was an error on this page.\n\n";
+			txt+="Error description: " + err.message + "\n\n";
+			setNotificationVisibleText(txt);
 		}
 	}
-	catch(err)
-	{
-		txt="There was an error on this page.\n\n";
-		txt+="Error description: " + err.message + "\n\n";
-		setNotificationVisibleText(txt);
-	}
-}
 
-// handle APNS notifications for iOS
-function onNotificationAPN(e) {
-	if (e.alert) {
-		setNotificationVisibleText('<li>push-notification: ' + e.alert + '</li>');
-		// showing an alert also requires the org.apache.cordova.dialogs plugin
-		navigator.notification.alert(e.alert);
-	}
-
-	if (e.sound) {
-		// playing a sound also requires the org.apache.cordova.media plugin
-		var snd = new Media(e.sound);
-		snd.play();
-	}
-
-	if (e.badge) {
-		pushNotification.setApplicationIconBadgeNumber(successHandler, e.badge);
-	}
-}
-
-function sendRegId(regid){
-	$.ajax({
-		url: 'http://m.enibague.com/saveregid.php',
-		type: 'GET',
-		data: 'regid='+regid,
-		success: function(data) {
-			setNotificationVisibleText(data);
-		},
-		error: function(e) {
-
+	// handle APNS notifications for iOS
+	function onNotificationAPN(e) {
+		if (e.alert) {
+			setNotificationVisibleText('<li>push-notification: ' + e.alert + '</li>');
+			// showing an alert also requires the org.apache.cordova.dialogs plugin
+			navigator.notification.alert(e.alert);
 		}
-	});
-}
 
+		if (e.sound) {
+			// playing a sound also requires the org.apache.cordova.media plugin
+			var snd = new Media(e.sound);
+			snd.play();
+		}
 
-// handle GCM notifications for Android
-function onNotification(e) {
-	setNotificationVisibleText('<li>EVENT -> RECEIVED:' + e.event + '</li>');
+		if (e.badge) {
+			pushNotification.setApplicationIconBadgeNumber(successHandler, e.badge);
+		}
+	}
 
-	switch( e.event )
-	{
-		case 'registered':
-			if ( e.regid.length > 0 )
-			{
-				setNotificationVisibleText('<li>REGISTERED -> REGID:' + e.regid + "</li>");
-				// Your GCM push server needs to know the regID before it can push to this device
-				// here is where you might want to send it the regID for later use.
-				setNotificationVisibleText("regID = " + e.regid);
-				sendRegId(e.regid);
+	function sendRegId(regid){
+		$.ajax({
+			url: 'http://m.enibague.com/saveregid.php',
+			type: 'GET',
+			data: 'regid='+regid,
+			success: function(data) {
+				setNotificationVisibleText(data);
+			},
+			error: function(e) {
+
 			}
-			break;
+		});
+	}
 
-		case 'message':
-			// if this flag is set, this notification happened while we were in the foreground.
-			// you might want to play a sound to get the user's attention, throw up a dialog, etc.
-			if (e.foreground)
-			{
-				setNotificationVisibleText('<li>--INLINE NOTIFICATION--' + '</li>');
 
-				// on Android soundname is outside the payload.
-				// On Amazon FireOS all custom attributes are contained within payload
-				var soundfile = e.soundname || e.payload.sound;
-				// if the notification contains a soundname, play it.
-				// playing a sound also requires the org.apache.cordova.media plugin
-				var my_media = new Media("/android_asset/www/"+ soundfile);
+	// handle GCM notifications for Android
+	function onNotification(e) {
+		setNotificationVisibleText('<li>EVENT -> RECEIVED:' + e.event + '</li>');
 
-				my_media.play();
-			}
-			else
-			{	// otherwise we were launched because the user touched a notification in the notification tray.
-				if (e.coldstart)
-					setNotificationVisibleText('<li>--COLDSTART NOTIFICATION--' + '</li>');
+		switch( e.event )
+		{
+			case 'registered':
+				if ( e.regid.length > 0 )
+				{
+					setNotificationVisibleText('<li>REGISTERED -> REGID:' + e.regid + "</li>");
+					// Your GCM push server needs to know the regID before it can push to this device
+					// here is where you might want to send it the regID for later use.
+					setNotificationVisibleText("regID = " + e.regid);
+					sendRegId(e.regid);
+				}
+				break;
+
+			case 'message':
+				// if this flag is set, this notification happened while we were in the foreground.
+				// you might want to play a sound to get the user's attention, throw up a dialog, etc.
+				if (e.foreground)
+				{
+					setNotificationVisibleText('<li>--INLINE NOTIFICATION--' + '</li>');
+
+					// on Android soundname is outside the payload.
+					// On Amazon FireOS all custom attributes are contained within payload
+					var soundfile = e.soundname || e.payload.sound;
+					// if the notification contains a soundname, play it.
+					// playing a sound also requires the org.apache.cordova.media plugin
+					var my_media = new Media("/android_asset/www/"+ soundfile);
+
+					my_media.play();
+				}
 				else
-					setNotificationVisibleText('<li>--BACKGROUND NOTIFICATION--' + '</li>');
-			}
+				{	// otherwise we were launched because the user touched a notification in the notification tray.
+					if (e.coldstart)
+						setNotificationVisibleText('<li>--COLDSTART NOTIFICATION--' + '</li>');
+					else
+						setNotificationVisibleText('<li>--BACKGROUND NOTIFICATION--' + '</li>');
+				}
 
-			setNotificationVisibleText('<li>MESSAGE -> MSG: ' + e.payload.message + '</li>');
-			//android only
-			setNotificationVisibleText('<li>MESSAGE -> MSGCNT: ' + e.payload.msgcnt + '</li>');
-			//amazon-fireos only
-			setNotificationVisibleText('<li>MESSAGE -> TIMESTAMP: ' + e.payload.timeStamp + '</li>');
-			break;
+				setNotificationVisibleText('<li>MESSAGE -> MSG: ' + e.payload.message + '</li>');
+				//android only
+				setNotificationVisibleText('<li>MESSAGE -> MSGCNT: ' + e.payload.msgcnt + '</li>');
+				//amazon-fireos only
+				setNotificationVisibleText('<li>MESSAGE -> TIMESTAMP: ' + e.payload.timeStamp + '</li>');
+				window.localStorage.setItem("versionDownloadAgain","true");
 
-		case 'error':
-			setNotificationVisibleText('<li>ERROR -> MSG:' + e.msg + '</li>');
-			break;
+				if(e.payload.ntype=="category"){
+					showCategory(e.payload.catname,e.payload.cattitle,e.payload.cattype);
+				} else if(e.payload.ntype=="article"){
+					showArticle(e.payload.artid);
+				}
 
-		default:
-			setNotificationVisibleText('<li>EVENT -> Unknown, an event was received and we do not know what it is</li>');
-			break;
+				break;
+
+			case 'error':
+				setNotificationVisibleText('<li>ERROR -> MSG:' + e.msg + '</li>');
+				break;
+
+			default:
+				setNotificationVisibleText('<li>EVENT -> Unknown, an event was received and we do not know what it is</li>');
+				break;
+		}
 	}
-}
 
-function tokenHandler (result) {
-	setNotificationVisibleText('<li>token: '+ result +'</li>');
-	// Your iOS push server needs to know the token before it can push to this device
-	// here is where you might want to send it the token for later use.
-}
+	function tokenHandler (result) {
+		setNotificationVisibleText('<li>token: '+ result +'</li>');
+		// Your iOS push server needs to know the token before it can push to this device
+		// here is where you might want to send it the token for later use.
+	}
 
-function successHandler (result) {
-	setNotificationVisibleText('<li>success:'+ result +'</li>');
-}
+	function successHandler (result) {
+		setNotificationVisibleText('<li>success:'+ result +'</li>');
+	}
 
-function errorHandler (error) {
-	setNotificationVisibleText('<li>error:'+ error +'</li>');
-}
+	function errorHandler (error) {
+		setNotificationVisibleText('<li>error:'+ error +'</li>');
+	}
 
 
