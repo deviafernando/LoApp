@@ -45,7 +45,7 @@ function firstTimeConfiguration(data){
 	}
 
 	setConfigurationVariables(configuration);
-	requestUrlContent(mobileUrl+"home.php","FirstTimeHome",true);
+	requestUrlContent(mobileUrl+"homeItems.php","FirstTimeHome",true);
 }
 
 function setUpMenuItems(data){
@@ -58,7 +58,7 @@ function compareConfiguration(data){
 	if(configuration.appVersion.toString()!=window.localStorage.getItem('configurationAppVersion')){
 		window.localStorage.setItem("versionDownloadAgain","true");
 		window.localStorage.setItem('configurationAppVersionLast',configuration.appVersion);
-		requestUrlContent(mobileUrl+"home.php","catTypeDownload",false);
+		requestUrlContent(mobileUrl+"homeItems.php","catTypeDownload",false);
 		setConfigurationVariables(configuration);
 	}
 }
@@ -165,7 +165,7 @@ function ajaxSuccess(data, typePetition,value){
 				printMultipleCategories(data);
 				break;
 			case "MultipleContent":
-				printMultipleContent(data);
+				showMultipleContent(value[0],value[1],data);
 				break;
 			case "ArticleDownload":
 				articleDownload(data,value);
@@ -358,10 +358,17 @@ function setupHeader(menuItems){
 				menusToDownload.push(value);
 					menuHtmlString+=value[1];
 				menuHtmlString+='</div>';
-
-
-			$("#sidr").html(menuHtmlString);
 		});
+
+		menuHtmlString+='<div class="closeMenu">x</div>';
+
+		menuHtmlString+='<div class="menuItemSearch">';
+			menuHtmlString+='BUSCAR';
+		menuHtmlString+='</div>';
+
+
+		$("#sidr").html(menuHtmlString);
+
 
 
 		$("#header").html(homeHtmlString);
@@ -390,7 +397,7 @@ function printArticle(articleData){
 	var homeHtmlString = "";
 
 	homeHtmlString+='<div class="articleContentSingle" content-id="'+article.ID+'">';
-		homeHtmlString+="<h2>"+article.post_title+"</h2>";
+		homeHtmlString+="<h1>"+article.post_title+"</h1>";
 		homeHtmlString+='<img class="img-responsive img-thumbnail" src="'+article.featured_image+'"/>';
 		homeHtmlString+="<p>"+article.post_content+"</p>";
 		homeHtmlString+='<br class="clear"/>';
@@ -404,6 +411,16 @@ function printArticle(articleData){
 function showCategory(menuName,menuTitle,menuType){
 	requestFileContentFromUrlServer(menuType+menuTitle,"json","CatTypeShow",false,[menuName,menuTitle,menuType]);
 	return true;
+}
+
+function showSearch(){
+	setVisibleText("El datacontent se cargo");
+
+	var homeHtmlString='<form class="form-wrapper cf"><input type="text" placeholder="Search here..." required><button type="submit">Search</button></form>';
+	homeHtmlString+='<div id="searchResults"></div>';
+
+
+	changeContent(homeHtmlString);
 }
 
 function showArticle(articleID){
@@ -448,6 +465,35 @@ function printMultipleCategories(data){
 	downloadMenus();
 }
 
+function printHome(data){
+	setVisibleText("El datacontent se cargo");
+
+	data= verifyDataContent(data);
+	var home = JSON.parse(data);
+	var homeHtmlString="";
+	for (var key in home) {
+		if (home.hasOwnProperty(key)) {
+			homeHtmlString+='<div class="homeContainer">';
+				homeHtmlString+="<h1>"+key+"</h1>";
+				home[key].forEach(function(menu) {
+					homeHtmlString+='<div class="menuItem" menu-title="'+menu[1]+'" menu-name="'+menu[0]+'" menu-type="'+menu[2]+'">';
+						homeHtmlString+=menu[1];
+					homeHtmlString+='</div>';
+				});
+
+				homeHtmlString+='<div class="menuItemSearch">';
+					homeHtmlString+='BUSCAR';
+				homeHtmlString+='</div>';
+			homeHtmlString+="</div>";
+			homeHtmlString+='<div class="backgroundContainer"></div>';
+		}
+	}
+	changeContent(homeHtmlString);
+	changeContentLoading(false);
+}
+
+
+
 function printMultipleContent(data){
 	setVisibleText("El datacontent se cargo");
 
@@ -488,9 +534,14 @@ function showMultipleContent(fileName,Extension,data){
 	setVisibleText("Se Mostrara un contenido multiple");
 
 	if(data===undefined){
-		requestFileContentFromUrlServer(fileName,Extension,"MultipleContent",false);
+		requestFileContentFromUrlServer(fileName,Extension,"MultipleContent",false,[fileName,Extension]);
 	} else {
-		printMultipleContent(data);
+		if(fileName=="home"){
+			printHome(data);
+		} else {
+			printMultipleContent(data);
+		}
+
 	}
 }
 
@@ -648,14 +699,26 @@ $( "body" ).delegate( ".articleContentCategory", "click", function() {
 	return true;
 });
 
+$( "body" ).delegate( "h1,.closeMenu", "click", function() {
+	$.sidr('toggle', 'sidr');
+});
 $( "body" ).delegate( ".menuItemHome", "click", function() {
+	$.sidr('close', 'sidr');
 	$(".activeMenuItem").removeClass("activeMenuItem");
 	$(this).addClass("activeMenuItem");
 	breadcrumbsNavigation = [];
 	showMultipleContent("home","json");
 	return true;
 });
+
+$( "body" ).delegate( ".menuItemSearch", "click", function() {
+	showSearch();
+	$(".activeMenuItem").removeClass("activeMenuItem");
+	$(this).addClass("activeMenuItem");
+});
+
 $( "body" ).delegate( ".menuItem,.menuItemActive", "click", function() {
+	$.sidr('close', 'sidr');
 	changeContentLoading(true);
 	$(".activeMenuItem").removeClass("activeMenuItem");
 	$(this).addClass("activeMenuItem");
