@@ -176,6 +176,9 @@ function ajaxSuccess(data, typePetition,value){
 			case "DownloadAgain":
 				downloadAgain(data,value);
 				break;
+			case "SearchRequest":
+				printSearch(data);
+				break;
 			case "ArticleVerification":
 			default:
 				break;
@@ -221,6 +224,10 @@ function downloadShowArticleError(articleID,t){
 	}
 }
 
+function requestSearchError(){
+	generateAlert("Imposible Conectar", "Esta función solo esta disponible si esta conectado a internet", "Aceptar");
+}
+
 function ajaxError(typePetition,value,t){
 	switch(typePetition) {
 		case "FirstTimeConfiguration":
@@ -244,6 +251,9 @@ function ajaxError(typePetition,value,t){
 			break;
 		case "DownloadShowArticle":
 			downloadShowArticleError(value,t);
+			break;
+		case "SearchRequest":
+			requestSearchError();
 			break;
 		case "DownloadAgain":
 		case "ArticleDownload":
@@ -413,14 +423,30 @@ function showCategory(menuName,menuTitle,menuType){
 	return true;
 }
 
+function loadSearchFormListener(){
+	$( "#search-form" ).submit(function( event ) {
+		event.preventDefault();
+		setVisibleText( "Buscando..." );
+
+		if(isOnInternet()){
+			var searchWord = $("#search-input").val();
+			requestUrlContent(mobileUrl+"searchRequest.php?searchString="+searchWord,"SearchRequest",false);
+		} else {
+			generateAlert("Imposible Conectar", "Esta función solo esta disponible si esta conectado a internet", "Aceptar");
+		}
+
+
+	});
+}
+
 function showSearch(){
 	setVisibleText("El datacontent se cargo");
-
-	var homeHtmlString='<form class="form-wrapper cf"><input type="text" placeholder="Search here..." required><button type="submit">Search</button></form>';
-	homeHtmlString+='<div id="searchResults"></div>';
-
-
-	changeContent(homeHtmlString);
+	var homeHtmlString='<div class="catTypesContainer">';
+		homeHtmlString+="<h1>BUSCAR</h1>";
+		homeHtmlString+='<form id="search-form" class="form-wrapper cf"><input id="search-input" type="text" placeholder="Buscar..." required><button type="submit">Buscar</button></form>';
+		homeHtmlString+='<div id="searchResults"></div>';
+	homeHtmlString+='</div>';
+	loadSearchFormListener();
 }
 
 function showArticle(articleID){
@@ -492,6 +518,29 @@ function printHome(data){
 	changeContentLoading(false);
 }
 
+
+function printSearch(data){
+	setVisibleText("El datacontent se cargo");
+	data= verifyDataContent(data);
+	var home = JSON.parse(data);
+	var homeHtmlString="";
+	for (var key in home) {
+		if (home.hasOwnProperty(key)) {
+			home[key].forEach(function(article) {
+				articlesToDownload.push(article.ID);
+				homeHtmlString+='<div class="articleContentCategory" content-id="'+article.ID+'">';
+				homeHtmlString+="<h2>"+article.post_title+"</h2>";
+				homeHtmlString+='<img src="'+article.featured_image+'"/>';
+				homeHtmlString+="<p>"+article.post_excerpt+"</p>";
+				homeHtmlString+='<br class="clear" />';
+				homeHtmlString+="</div>";
+			});
+		}
+	}
+	$("#searchResults").html(homeHtmlString);
+	changeContentLoading(false);
+	downloadArticles();
+};
 
 
 function printMultipleContent(data){
@@ -712,9 +761,14 @@ $( "body" ).delegate( ".menuItemHome", "click", function() {
 });
 
 $( "body" ).delegate( ".menuItemSearch", "click", function() {
-	showSearch();
-	$(".activeMenuItem").removeClass("activeMenuItem");
-	$(this).addClass("activeMenuItem");
+	if(isOnInternet()){
+		showSearch();
+		$(".activeMenuItem").removeClass("activeMenuItem");
+		$(this).addClass("activeMenuItem");
+	} else {
+		generateAlert("Imposible Conectar", "Esta función solo esta disponible si esta conectado a internet", "Aceptar");
+	}
+
 });
 
 $( "body" ).delegate( ".menuItem,.menuItemActive", "click", function() {
