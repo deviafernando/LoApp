@@ -8,12 +8,19 @@ body, html {
 	padding: 0;
 	font-family: 'Open Sans', 'Droid Sans', 'Roboto', sans-serif;
 	min-height: 100%;
+	max-width: 100%;
+	width: 100%;
 }
 
 #content {
 	padding: 0;
 	margin: 0 0 10px 0;
+	position: relative;
+	z-index: 1;
+}
 
+#header, #content {
+	max-width: 100%;
 }
 
 #content .homeContainer h1,#content .catTypesContainer h1 {
@@ -21,6 +28,17 @@ body, html {
 	font-size: 4em;
 	text-transform: uppercase;
 	padding: 5px 0;
+	text-align: center;
+}
+
+#content .catTypesContainer .loadMore {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	padding: 10px;
+	border-bottom: 0;
+	font-size: 2.7em;
+	z-index: 3;
 	text-align: center;
 }
 
@@ -56,15 +74,16 @@ body, html {
 	position: fixed;
 	top: 0;
 	width: 100%;
-	height: 10%;
+	height: 15%;
 	margin: 0;
 	padding: 0;
-	z-index: 100;
+	z-index: 98;
 }
 
 #header #logo {
 	text-align: center;
 	margin-top: 2%;
+	width: 100%;
 }
 
 #header #logo img {
@@ -81,7 +100,7 @@ body, html {
 	padding: 10px;
 }
 
-#sidr .menuItemSearch, #sidr .menuItem, #sidr .menuItemHome {
+.drawer .menuItemSearch, .drawer .menuItem, .drawer .menuItemHome {
 	font-size: 2.5em;
 	padding: 1em;
 	text-transform: uppercase;
@@ -119,6 +138,7 @@ body, html {
 	top: 0;
 	display: none;
 	opacity: 0.7;
+	z-index: 6000;
 }
 
 
@@ -129,7 +149,7 @@ body, html {
 	position: fixed;
 	top: 0;
 	text-align: center;
-	z-index: 101;
+	z-index: 6001;
 }
 
 #splashScreen img {
@@ -165,7 +185,6 @@ body, html {
 }
  
 /* Form text input */
- 
 .form-wrapper input {
     width: 73%;
     height: 3em;

@@ -1,24 +1,35 @@
+#header #logo {
+    background: #fff;
+}
+
 #content .backgroundContainer {
     background: url("../img/bg.jpg") no-repeat center;
-    position: fixed;
     width: 100%;
-    height: 100%;
-    z-index: 0;
+    max-width: 100%;
+    height: 40%;
+    max-height: 563px;
+    min-height: 300px;
 }
 
 #content .homeContainer .menuItem,#content .homeContainer .menuItemSearch  {
-    float: left;
-    width: 30%;
-    margin: 50% 1.66% 0 1.66%;
     font-size: 2.5em;
     color: #99BF38;
-    border: 1px solid #02AEF0;
-    background: #fff;
-    text-align: center;
-    padding: 40px 0;
-    z-index: 2;
-    position: relative;
+    border-bottom: 1px solid #02AEF0;
+    text-align: left;
+    padding: 40px 20px 40px 60px;
     text-transform: uppercase;
+}
+
+#content .homeContainer .menuItem.Lugares {
+    background: #fff url("../img/places.png") no-repeat 5px 50%;
+}
+
+#content .homeContainer .menuItem.Eventos {
+    background: #fff url("../img/events.png") no-repeat 5px 50%;
+}
+
+#content .homeContainer .menuItemSearch {
+    background: #fff url("../img/search.png") no-repeat 5px 50%;
 }
 
 .articleContentSingle, .articleContentCategory {
@@ -41,6 +52,12 @@
     color: #99BF38;
 }
 
+#content .catTypesContainer .loadMore {
+    background: #fff;
+    border: 1px solid #02AEF0;
+    border-bottom: 0;
+    margin: 0;
+}
 #content .homeContainer h1, #content .articleContentSingle h1,#content .catTypesContainer h1 {
     background: #02AEF0 url("../img/menuIcon.png") no-repeat 95% 50%;
     min-height: 50px;
@@ -58,22 +75,12 @@
     border-bottom: 2px solid #02AEF0;
 }
 
-#sidr .closeMenu {
-    border: 1px solid #999;
-    background: #666;
-    color: #fff;
-    position: absolute;
-    right: 0;
-    top: 0;
-    padding: 10px;
-    font-size: 5em;
-}
-
-#sidr .menuItem, #sidr .menuItemSearch, #sidr .menuItemHome {
+.drawer .menuItem, .drawer .menuItemSearch, .drawer .menuItemHome {
     color: #666666;
     border-bottom: 1px solid #999;
 }
 
-#sidr .activeMenuItem {
+.drawer .activeMenuItem {
     color: #99BF38;
 }
+

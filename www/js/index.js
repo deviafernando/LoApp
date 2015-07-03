@@ -7,6 +7,8 @@ var breadcrumbsNavigation = [];
 var menuStatus=false;
 var readyToExit=false;
 var contentLoadingTimeOut;
+var currentCatType = [];
+var actualCountToDownload=10;
 
 function isOnInternet(){
 	if(navigator.connection.type=="Connection.NONE"){
@@ -68,9 +70,9 @@ function menuContentDownload(fileExist,value){
 
 	if(!fileExist || downloadAgain=="true"){
 		if(value[2]=="type"){
-			requestUrlContent(mobileUrl+"cat_type.php?type="+value[0]+"&typeTitle="+value[1],"CatTypeDownload",false,value);
+			requestUrlContent(mobileUrl+"cat_type.php?count=10&type="+value[0]+"&typeTitle="+value[1],"CatTypeDownload",false,value);
 		} else if(value[2]=="category") {
-			requestUrlContent(mobileUrl+"cat_type.php?category="+value[0]+"&categoryTitle="+value[1],"CatTypeDownload",false,value);
+			requestUrlContent(mobileUrl+"cat_type.php?count=10&category="+value[0]+"&categoryTitle="+value[1],"CatTypeDownload",false,value);
 		} else if(value[2]=="subcategories") {
 			requestUrlContent(mobileUrl+"subcategory.php?category="+value[0]+"&categoryTitle="+value[1],"subCategoryDownload",false,value);
 		}
@@ -89,9 +91,9 @@ function catTypeShow(data,value){
 	var downloadAgain = window.localStorage.getItem("versionDownloadAgain");
 	if(downloadAgain=="true" && isOnInternet()){
 		if(value[2]=="type"){
-			requestUrlContent(mobileUrl+"cat_type.php?type="+value[0]+"&typeTitle="+value[1],"CatTypeDownloadAndShowAgain",false,value);
+			requestUrlContent(mobileUrl+"cat_type.php?count=10&type="+value[0]+"&typeTitle="+value[1],"CatTypeDownloadAndShowAgain",false,value);
 		} else if(value[2]=="category") {
-			requestUrlContent(mobileUrl+"cat_type.php?category="+value[0]+"&categoryTitle="+value[1],"CatTypeDownloadAndShowAgain",false,value);
+			requestUrlContent(mobileUrl+"cat_type.php?count=10&category="+value[0]+"&categoryTitle="+value[1],"CatTypeDownloadAndShowAgain",false,value);
 		} else if(value[2]=="subcategories") {
 			requestUrlContent(mobileUrl+"subcategory.php?category="+value[0]+"&categoryTitle="+value[1],"subCatTypeDownloadAndShowAgain",false,value);
 		}
@@ -162,7 +164,7 @@ function ajaxSuccess(data, typePetition,value){
 				setUpMenuItems(data);
 				break;
 			case "MultipleCategories":
-				printMultipleCategories(data);
+				printMultiplesCategories(data);
 				break;
 			case "MultipleContent":
 				showMultipleContent(value[0],value[1],data);
@@ -194,19 +196,23 @@ function firstTimeError() {
 function catTypeShowError(value){
 	if(isOnInternet()){
 		if(value[2]=="type"){
-			requestUrlContent(mobileUrl+"cat_type.php?type="+value[0]+"&typeTitle="+value[1],"CatTypeDownloadAndShow",false,value);
+			requestUrlContent(mobileUrl+"cat_type.php?count=10&type="+value[0]+"&typeTitle="+value[1],"CatTypeDownloadAndShow",false,value);
 		} else if(value[2]=="category") {
-			requestUrlContent(mobileUrl+"cat_type.php?category="+value[0]+"&categoryTitle="+value[1],"CatTypeDownloadAndShow",false,value);
+			requestUrlContent(mobileUrl+"cat_type.php?count=10&category="+value[0]+"&categoryTitle="+value[1],"CatTypeDownloadAndShow",false,value);
 		} else if(value[2]=="subcategories") {
 			requestUrlContent(mobileUrl+"subcategory.php?category="+value[0]+"&categoryTitle="+value[1],"CatTypeDownloadAndShow",false,value);
 		}
 	} else {
 		generateAlert("Imposible Cargar Contenido","Este articulo no ha sido descargado, intente nuvemante cuando tenga conexión a Internet","Aceptar");
+		changeContentLoading(false);
+		breadcrumbsNavigation.pop();
 	}
 }
 
 function catTypeDownloadAndShowError(){
 	generateAlert("Imposible Cargar Contenido","No se ha podido conectar verifique su conexión a Internet","Aceptar");
+	changeContentLoading(false);
+	breadcrumbsNavigation.pop();
 }
 
 function articleVerificationError(articleID){
@@ -219,13 +225,19 @@ function downloadShowArticleError(articleID,t){
 	if(isOnInternet() && t!="timeout"){
 		requestUrlContent(mobileUrl+"article.php?articleID="+articleID,"DownloadShowArticle",true,articleID);
 	} else {
-		
 		generateAlert("Imposible Cargar Contenido","No se ha podido conectar verifique su conexión a Internet","Aceptar");
+		changeContentLoading(false);
+		breadcrumbsNavigation.pop();
 	}
 }
 
 function requestSearchError(){
 	generateAlert("Imposible Conectar", "Esta función solo esta disponible si esta conectado a internet", "Aceptar");
+	changeContentLoading(false);
+}
+
+function catTypeDownloadAndShowAgainError(){
+	changeContentLoading(false);
 }
 
 function ajaxError(typePetition,value,t){
@@ -254,6 +266,9 @@ function ajaxError(typePetition,value,t){
 			break;
 		case "SearchRequest":
 			requestSearchError();
+			break;
+		case "CatTypeDownloadAndShowAgain":
+			catTypeDownloadAndShowAgainError();
 			break;
 		case "DownloadAgain":
 		case "ArticleDownload":
@@ -347,8 +362,6 @@ function setupHeader(menuItems){
 		var homeHtmlString = "";
 		var menuHtmlString="";
 
-		homeHtmlString+='<a id="menu-activator" href="#sidr"></a>';
-
 		homeHtmlString+='<div id="logo">';
 		if(logo!="false"){
 			homeHtmlString+='<img src="'+logo+'"/>';
@@ -370,30 +383,30 @@ function setupHeader(menuItems){
 				menuHtmlString+='</div>';
 		});
 
-		menuHtmlString+='<div class="closeMenu">x</div>';
+
 
 		menuHtmlString+='<div class="menuItemSearch">';
 			menuHtmlString+='BUSCAR';
 		menuHtmlString+='</div>';
 
-
-		$("#sidr").html(menuHtmlString);
-
-
+		$("#drawer-menu").html(menuHtmlString);
+		setUpMenuFunctions();
 
 		$("#header").html(homeHtmlString);
 		$("#content").css("margin-top",$("#header").height());
 
-		$("#menu-activator").sidr({
-			onOpen: function(){
-				menuStatus=true;
-			},
-			onClose: function(){
-				menuStatus=false;
-			}
-		});
 		downloadMenus();
 	}
+}
+
+function setUpMenuFunctions(){
+	$(".drawer").drawer();
+	$('.drawer').on('drawer.opened',function(){
+		menuStatus=true;
+	});
+	$('.drawer').on('drawer.closed',function(){
+		menuStatus=false;
+	});
 }
 
 function verifyDataContent(string){
@@ -430,7 +443,8 @@ function loadSearchFormListener(){
 
 		if(isOnInternet()){
 			var searchWord = $("#search-input").val();
-			requestUrlContent(mobileUrl+"searchRequest.php?searchString="+searchWord,"SearchRequest",false);
+			changeContentLoading(true);
+			requestUrlContent(mobileUrl+"searchRequest.php?searchString="+searchWord,"SearchRequest",true);
 		} else {
 			generateAlert("Imposible Conectar", "Esta función solo esta disponible si esta conectado a internet", "Aceptar");
 		}
@@ -446,6 +460,7 @@ function showSearch(){
 		homeHtmlString+='<form id="search-form" class="form-wrapper cf"><input id="search-input" type="text" placeholder="Buscar..." required><button type="submit">Buscar</button></form>';
 		homeHtmlString+='<div id="searchResults"></div>';
 	homeHtmlString+='</div>';
+	changeContent(homeHtmlString);
 	loadSearchFormListener();
 }
 
@@ -454,120 +469,145 @@ function showArticle(articleID){
 	return true;
 }
 
-function printMultipleCategories(data){
+function printMultiplesCategories(data){
 	setVisibleText("El datacontent se cargo");
 
 	data= verifyDataContent(data);
-	var home = JSON.parse(data);
-	var homeHtmlString="";
 
-	for (var key in home) {
-		if (home.hasOwnProperty(key)) {
-			homeHtmlString+='<div class="catTypesContainer">';
-			homeHtmlString+="<h1>"+key+"</h1>";
-			homeHtmlString+='<div class="row">';
-			var i=0;
-			home[key].forEach(function(category) {
-				i++;
+	try{
+		var home = JSON.parse(data);
 
-				menusToDownload.push([category.ID,category.cat_title,category.cat_type]);
+		var homeHtmlString="";
 
-				homeHtmlString+='<div class="subcategoryContentCategory col-sm-2" cat-title="'+category.cat_title+'" cat-type="'+category.cat_type+'" cat-id="'+category.ID+'">';
-					homeHtmlString+="<h2>"+category.cat_title+"</h2>";
-				homeHtmlString+="</div>";
+		for (var key in home) {
+			if (home.hasOwnProperty(key)) {
+				homeHtmlString+='<div class="catTypesContainer">';
+				homeHtmlString+="<h1>"+key+"</h1>";
+				homeHtmlString+='<div class="row">';
+				var i=0;
+				home[key].forEach(function(category) {
+					i++;
 
-				if(i%2==0){
-					homeHtmlString+='<div class="row">';
+					menusToDownload.push([category.ID,category.cat_title,category.cat_type]);
+
+					homeHtmlString+='<div class="subcategoryContentCategory col-sm-2" cat-title="'+category.cat_title+'" cat-type="'+category.cat_type+'" cat-id="'+category.ID+'">';
+						homeHtmlString+="<h2>"+category.cat_title+"</h2>";
 					homeHtmlString+="</div>";
-				}
 
-			});
-			homeHtmlString+="</div>";
-			homeHtmlString+="</div>";
+					if(i%2==0){
+						homeHtmlString+='<div class="row">';
+						homeHtmlString+="</div>";
+					}
+
+				});
+				homeHtmlString+="</div>";
+				homeHtmlString+="</div>";
+			}
 		}
+
+		changeContent(homeHtmlString);
+		downloadMenus();
+
+	} catch(e){
+		generateAlert("Error","La categoría a la que intenta acceder no esta disponible, porfavor intente mas tarde","Aceptar");
 	}
-	changeContent(homeHtmlString);
 	changeContentLoading(false);
-	downloadMenus();
+
 }
 
 function printHome(data){
 	setVisibleText("El datacontent se cargo");
 
 	data= verifyDataContent(data);
-	var home = JSON.parse(data);
-	var homeHtmlString="";
-	for (var key in home) {
-		if (home.hasOwnProperty(key)) {
-			homeHtmlString+='<div class="homeContainer">';
+	try {
+		var home = JSON.parse(data);
+		var homeHtmlString="";
+		for (var key in home) {
+			if (home.hasOwnProperty(key)) {
+				homeHtmlString+='<div class="homeContainer">';
 				homeHtmlString+="<h1>"+key+"</h1>";
+				homeHtmlString+='<div class="backgroundContainer"></div>';
 				home[key].forEach(function(menu) {
-					homeHtmlString+='<div class="menuItem" menu-title="'+menu[1]+'" menu-name="'+menu[0]+'" menu-type="'+menu[2]+'">';
-						homeHtmlString+=menu[1];
+					homeHtmlString+='<div class="menuItem '+menu[1]+'" menu-title="'+menu[1]+'" menu-name="'+menu[0]+'" menu-type="'+menu[2]+'">';
+					homeHtmlString+=menu[1];
 					homeHtmlString+='</div>';
 				});
 
 				homeHtmlString+='<div class="menuItemSearch">';
-					homeHtmlString+='BUSCAR';
+				homeHtmlString+='BUSCAR';
 				homeHtmlString+='</div>';
-			homeHtmlString+="</div>";
-			homeHtmlString+='<div class="backgroundContainer"></div>';
+				homeHtmlString+="</div>";
+			}
 		}
+		changeContent(homeHtmlString);
+	} catch(e){
+		generateAlert("Error","La categoría a la que intenta acceder no esta disponible, porfavor intente mas tarde","Aceptar");
 	}
-	changeContent(homeHtmlString);
 	changeContentLoading(false);
+
 }
 
 
 function printSearch(data){
 	setVisibleText("El datacontent se cargo");
 	data= verifyDataContent(data);
-	var home = JSON.parse(data);
-	var homeHtmlString="";
-	for (var key in home) {
-		if (home.hasOwnProperty(key)) {
-			home[key].forEach(function(article) {
-				articlesToDownload.push(article.ID);
-				homeHtmlString+='<div class="articleContentCategory" content-id="'+article.ID+'">';
-				homeHtmlString+="<h2>"+article.post_title+"</h2>";
-				homeHtmlString+='<img src="'+article.featured_image+'"/>';
-				homeHtmlString+="<p>"+article.post_excerpt+"</p>";
-				homeHtmlString+='<br class="clear" />';
-				homeHtmlString+="</div>";
-			});
+	try
+	{
+		var home = JSON.parse(data);
+		var homeHtmlString="";
+		for (var key in home) {
+			if (home.hasOwnProperty(key)) {
+				home[key].forEach(function(article) {
+					articlesToDownload.push(article.ID);
+					homeHtmlString+='<div class="articleContentCategory" content-id="'+article.ID+'">';
+					homeHtmlString+="<h2>"+article.post_title+"</h2>";
+					homeHtmlString+='<img src="'+article.featured_image+'"/>';
+					homeHtmlString+="<p>"+article.post_excerpt+"</p>";
+					homeHtmlString+='<br class="clear" />';
+					homeHtmlString+="</div>";
+				});
+			}
 		}
+		$("#searchResults").html(homeHtmlString);
+
+		downloadArticles();
+	} catch(e){
+		//generateAlert("Error","La busqueda que intenta hacer no esta disponible, porfavor intente mas tarde","Aceptar");
 	}
-	$("#searchResults").html(homeHtmlString);
 	changeContentLoading(false);
-	downloadArticles();
-};
+}
 
 
 function printMultipleContent(data){
 	setVisibleText("El datacontent se cargo");
 
 	data= verifyDataContent(data);
-	var home = JSON.parse(data);
-	var homeHtmlString="";
-	for (var key in home) {
-		if (home.hasOwnProperty(key)) {
-			homeHtmlString+='<div class="catTypesContainer">';
-			homeHtmlString+="<h1>"+key+"</h1>";
-			home[key].forEach(function(article) {
-				articlesToDownload.push(article.ID);
-				homeHtmlString+='<div class="articleContentCategory" content-id="'+article.ID+'">';
-				homeHtmlString+="<h2>"+article.post_title+"</h2>";
-				homeHtmlString+='<img src="'+article.featured_image+'"/>';
-				homeHtmlString+="<p>"+article.post_excerpt+"</p>";
-				homeHtmlString+='<br class="clear" />';
+	try {
+		var home = JSON.parse(data);
+		var homeHtmlString="";
+		for (var key in home) {
+			if (home.hasOwnProperty(key)) {
+				homeHtmlString+='<div class="catTypesContainer">';
+				homeHtmlString+="<h1>"+key+"</h1>";
+				home[key].forEach(function(article) {
+					articlesToDownload.push(article.ID);
+					homeHtmlString+='<div class="loadMore">CARGAR MÁS</div>';
+					homeHtmlString+='<div class="articleContentCategory" content-id="'+article.ID+'">';
+					homeHtmlString+="<h2>"+article.post_title+"</h2>";
+					homeHtmlString+='<img src="'+article.featured_image+'"/>';
+					homeHtmlString+="<p>"+article.post_excerpt+"</p>";
+					homeHtmlString+='<br class="clear" />';
+					homeHtmlString+="</div>";
+				});
 				homeHtmlString+="</div>";
-			});
-			homeHtmlString+="</div>";
+			}
 		}
+		changeContent(homeHtmlString);
+		downloadArticles();
+	} catch(e){
+		//generateAlert("Error","La busqueda que intenta hacer no esta disponible, porfavor intente mas tarde","Aceptar");
 	}
-	changeContent(homeHtmlString);
 	changeContentLoading(false);
-	downloadArticles();
 }
 
 function showMultipleCategories(fileName,Extension,data){
@@ -575,7 +615,7 @@ function showMultipleCategories(fileName,Extension,data){
 	if(data===undefined){
 		requestFileContentFromUrlServer(fileName,Extension,"MultipleCategories",false);
 	} else {
-		printMultipleCategories(data);
+		printMultiplesCategories(data);
 	}
 }
 
@@ -732,11 +772,26 @@ function changeContentLoading(isLoading){
 	}
 }
 
+$( "body" ).delegate( "h1,.closeMenu", "click", function() {
+	$('.drawer').drawer('toggle');
+});
+
+$(window).touchwipe({
+	wipeLeft: function() {
+		$('.drawer').drawer('close');
+	},
+	wipeRight: function() {
+		$('.drawer').drawer('open');
+	},
+	preventDefaultEvents: false
+});
+
 $( "body" ).delegate( ".subcategoryContentCategory", "click", function() {
 	changeContentLoading(true);
 	breadcrumbsNavigation.push([$(this).attr("cat-type")+$(this).attr("cat-title"),$(this).attr("cat-type")]);
+	currentCatType=[$(this).attr("cat-id"),$(this).attr("cat-title"),$(this).attr("cat-type")];
+	actualCountToDownload=10;
 	showCategory($(this).attr("cat-id"),$(this).attr("cat-title"),$(this).attr("cat-type"));
-
 	return true;
 });
 
@@ -748,11 +803,8 @@ $( "body" ).delegate( ".articleContentCategory", "click", function() {
 	return true;
 });
 
-$( "body" ).delegate( "h1,.closeMenu", "click", function() {
-	$.sidr('toggle', 'sidr');
-});
-$( "body" ).delegate( ".menuItemHome", "click", function() {
-	$.sidr('close', 'sidr');
+$( "body" ).delegate( ".menuItemHome,#logo", "click", function() {
+	$('.drawer').drawer('close');
 	$(".activeMenuItem").removeClass("activeMenuItem");
 	$(this).addClass("activeMenuItem");
 	breadcrumbsNavigation = [];
@@ -761,27 +813,59 @@ $( "body" ).delegate( ".menuItemHome", "click", function() {
 });
 
 $( "body" ).delegate( ".menuItemSearch", "click", function() {
+	$('.drawer').drawer('close');
 	if(isOnInternet()){
 		showSearch();
 		$(".activeMenuItem").removeClass("activeMenuItem");
 		$(this).addClass("activeMenuItem");
+		breadcrumbsNavigation.push([false,"search"]);
 	} else {
 		generateAlert("Imposible Conectar", "Esta función solo esta disponible si esta conectado a internet", "Aceptar");
 	}
 
 });
 
-$( "body" ).delegate( ".menuItem,.menuItemActive", "click", function() {
-	$.sidr('close', 'sidr');
+$( "body" ).delegate( ".loadMore", "click", function() {
+	$('.drawer').drawer('close');
 	changeContentLoading(true);
-	$(".activeMenuItem").removeClass("activeMenuItem");
-	$(this).addClass("activeMenuItem");
 
-	breadcrumbsNavigation.push([$(this).attr("menu-type")+$(this).attr("menu-title"),$(this).attr("menu-type")]);
-	showCategory($(this).attr("menu-name"),$(this).attr("menu-title"),$(this).attr("menu-type"));
+	actualCountToDownload+=10;
+
+	if(currentCatType[2]=="type"){
+		requestUrlContent(mobileUrl+"cat_type.php?count="+actualCountToDownload+"&type="+currentCatType[0]+"&typeTitle="+currentCatType[1],"CatTypeDownloadAndShowAgain",true,currentCatType);
+	} else if(currentCatType[2]=="category") {
+		requestUrlContent(mobileUrl+"cat_type.php?count="+actualCountToDownload+"&category="+currentCatType[0]+"&categoryTitle="+currentCatType[1],"CatTypeDownloadAndShowAgain",true,currentCatType);
+	} else {
+		changeContentLoading(false)
+	}
 
 	return true;
 });
+
+$(window).scroll(function() {
+
+	if($(window).scrollTop() + $(window).height() == $(document).height()) {
+		if(currentCatType[2]=="type"){
+			requestUrlContent(mobileUrl+"cat_type.php?count="+actualCountToDownload+"&type="+currentCatType[0]+"&typeTitle="+currentCatType[1],"CatTypeDownload",true,currentCatType);
+		} else if(currentCatType[2]=="category") {
+			requestUrlContent(mobileUrl+"cat_type.php?count="+actualCountToDownload+"&category="+currentCatType[0]+"&categoryTitle="+currentCatType[1],"CatTypeDownload",true,currentCatType);
+		}
+	}
+});
+
+$( "body" ).delegate( ".menuItem,.menuItemActive", "click", function() {
+	$('.drawer').drawer('close');
+	changeContentLoading(true);
+	$(".activeMenuItem").removeClass("activeMenuItem");
+	$(this).addClass("activeMenuItem");
+	breadcrumbsNavigation.push([$(this).attr("menu-type")+$(this).attr("menu-title"),$(this).attr("menu-type")]);
+	currentCatType = [$(this).attr("menu-name"),$(this).attr("menu-title"),$(this).attr("menu-type")];
+	actualCountToDownload=10;
+	showCategory($(this).attr("menu-name"),$(this).attr("menu-title"),$(this).attr("menu-type"));
+	return true;
+});
+
+
 
 function showToast(message,duration){
 	$("#toast").html(message);
@@ -812,7 +896,7 @@ document.addEventListener("backbutton", function(){
 
 	} else {
 		if(menuStatus){
-			$.sidr('close', 'sidr');
+			$('.drawer').drawer('close');
 			setVisibleText("cerrar panel izquierdo");
 		} else {
 			breadcrumbsNavigation.pop();
@@ -828,6 +912,8 @@ document.addEventListener("backbutton", function(){
 					showArticle(lastPage[0],"json")
 				} else if(lastPage[1]=="subcategories") {
 					showMultipleCategories(lastPage[0],"json");
+				} else if(lastPage[1]=="search") {
+					showSearch();
 				} else {
 					showMultipleContent(lastPage[0],"json")
 				}
@@ -951,8 +1037,11 @@ document.addEventListener('deviceready', onDeviceReady, false);
 
 				if(e.payload.ntype=="category"){
 					showCategory(e.payload.catname,e.payload.cattitle,e.payload.cattype);
+					changeContentLoading(true);
+
 				} else if(e.payload.ntype=="article"){
 					showArticle(e.payload.artid);
+					changeContentLoading(true);
 				}
 
 				break;

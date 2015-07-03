@@ -8,23 +8,37 @@
         <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi" />
         <link rel="stylesheet" type="text/css" href="css/bootstrap.min.css" />
         <link rel="stylesheet" type="text/css" href="css/bootstrap-theme.min.css" />
-        <link rel="stylesheet" type="text/css" href="css/jquery.sidr.light.css" />
+        <link rel="stylesheet" type="text/css" href="css/drawer.min.css" />
         <link rel="stylesheet" type="text/css" href="css/index.css" />
 
         <title>Imagina - My App</title>
     </head>
-    <body>
-        <div id="sidr"></div>
+    <body class="drawer drawer-top drawer-navbar">
+
+        <header role="banner">
+            <div class="drawer-main drawer-default">
+                <nav class="drawer-nav" role="navigation">
+                    <div class="drawer-brand">NAVEGACIÓN</div>
+                    <div class="drawer-menu" id="drawer-menu">
+                    </div>
+                </nav>
+            </div>
+        </header>
+
         <div id="header"></div>
-        <div id="content"></div>
+        <div id="content" class="drawer-overlay"></div>
         <div id="toast"></div>
 		<div id="loading"></div>
         <div id="splashScreen"><img src="img/splashScreen.png" /><br/><img id="splashLoading" src="img/loading.gif" /></div>
+
         <script type="text/javascript" src="cordova.js"></script>
         <script type="text/javascript" src="js/jquery.min.js"></script>
+        <script type="text/javascript" src="js/jquery.touchwipe.min.js"></script>
 		<script type="text/javascript" src="js/pushnotification.js"></script>
         <script type="text/javascript" src="js/bootstrap.min.js"></script>
-        <script type="text/javascript" src="js/jquery.sidr.min.js"></script>
+        <script type="text/javascript" src="js/iscroll-min.js"></script>
+        <script type="text/javascript" src="js/dropdown.min.js"></script>
+        <script type="text/javascript" src="js/jquery.drawer.min.js"></script>
         <script type="text/javascript" src="js/index.js"></script>
     </body>
 </html>
