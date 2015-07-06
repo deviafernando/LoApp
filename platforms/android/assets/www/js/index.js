@@ -11,7 +11,7 @@ var currentCatType = [];
 var actualCountToDownload=10;
 
 function isOnInternet(){
-	if(navigator.connection.type=="Connection.NONE"){
+	if(navigator.connection.type=="none" || navigator.connection.type==0){
 		setVisibleText("No Esta en Internet");
 		return false;
 	} else {
@@ -40,28 +40,47 @@ function firstTimeHome(data){
 
 function firstTimeConfiguration(data){
 	saveFileToSystem("config","json",data);
-	var configuration = JSON.parse(data);
+	try {
+		var configuration = JSON.parse(data);
+		if(isFirstTimeApp()) {
+			window.localStorage.setItem('configurationAppVersionLast',configuration.appVersion);
+		}
 
-	if(isFirstTimeApp()) {
-		window.localStorage.setItem('configurationAppVersionLast',configuration.appVersion);
+		setConfigurationVariables(configuration);
+		requestUrlContent(mobileUrl+"homeItems.php","FirstTimeHome",true);
+
+	} catch(e){
+		generateAlert("Error","No se ha podido conectar con el servidor, intente mas tarde","Aceptar");
+		navigator.app.exitApp();
 	}
 
-	setConfigurationVariables(configuration);
-	requestUrlContent(mobileUrl+"homeItems.php","FirstTimeHome",true);
+
 }
 
 function setUpMenuItems(data){
-	var configuration = JSON.parse(data);
-	setupHeader(configuration.menuItems);
+	try {
+		var configuration = JSON.parse(data);
+		setupHeader(configuration.menuItems);
+	} catch(e){
+		//generateAlert("Error","No se ha podido conectar con el servidor, intente mas tarde","Aceptar");
+		//navigator.app.exitApp();
+	}
+
 }
 
 function compareConfiguration(data){
-	var configuration = JSON.parse(data);
-	if(configuration.appVersion.toString()!=window.localStorage.getItem('configurationAppVersion')){
-		window.localStorage.setItem("versionDownloadAgain","true");
-		window.localStorage.setItem('configurationAppVersionLast',configuration.appVersion);
-		requestUrlContent(mobileUrl+"homeItems.php","catTypeDownload",false);
-		setConfigurationVariables(configuration);
+	try{
+		var configuration = JSON.parse(data);
+
+		if(configuration.appVersion.toString()!=window.localStorage.getItem('configurationAppVersion')){
+			window.localStorage.setItem("versionDownloadAgain","true");
+			window.localStorage.setItem('configurationAppVersionLast',configuration.appVersion);
+			requestUrlContent(mobileUrl+"homeItems.php","catTypeDownload",false);
+			setConfigurationVariables(configuration);
+		}
+
+	} catch(e){
+		//generateAlert("Error","No se ha podido conectar con el servidor, intente mas tarde","Aceptar");
 	}
 }
 
@@ -193,8 +212,8 @@ function firstTimeError() {
 	generateAlert("Imposible Conectar", "No se puede conectar con nuestro servidor en este momento, intente más tarde", "Aceptar");
 }
 
-function catTypeShowError(value){
-	if(isOnInternet()){
+function catTypeShowError(value,t){
+	if(isOnInternet() && t!="timeout"){
 		if(value[2]=="type"){
 			requestUrlContent(mobileUrl+"cat_type.php?count=10&type="+value[0]+"&typeTitle="+value[1],"CatTypeDownloadAndShow",false,value);
 		} else if(value[2]=="category") {
@@ -213,6 +232,12 @@ function catTypeDownloadAndShowError(){
 	generateAlert("Imposible Cargar Contenido","No se ha podido conectar verifique su conexión a Internet","Aceptar");
 	changeContentLoading(false);
 	breadcrumbsNavigation.pop();
+}
+
+function timeOutError(t){
+	if(t=="timeout"){
+		generateAlert("Tiempo de espera superado","Se ha superado el tiempo de espera, verifique su conexión a internet","Aceptar");
+	}
 }
 
 function articleVerificationError(articleID){
@@ -250,25 +275,30 @@ function ajaxError(typePetition,value,t){
 			menuContentDownload(false,value);
 			break;
 		case "CatTypeShow":
-			catTypeShowError(value);
+			catTypeShowError(value,t);
+			timeOutError(t);
 			break;
 		case "CatTypeDownloadAndShow":
 			catTypeDownloadAndShowError();
+			timeOutError(t);
 			break;
 		case "MultipleContent":
 			catTypeDownloadAndShowError();
+			timeOutError(t);
 			break;
 		case "ArticleVerification":
 			articleVerificationError(value);
 			break;
 		case "DownloadShowArticle":
 			downloadShowArticleError(value,t);
+			timeOutError(t);
 			break;
 		case "SearchRequest":
 			requestSearchError();
 			break;
 		case "CatTypeDownloadAndShowAgain":
 			catTypeDownloadAndShowAgainError();
+			timeOutError(t);
 			break;
 		case "DownloadAgain":
 		case "ArticleDownload":
@@ -289,11 +319,12 @@ function requestUrlContent(urlRequest,typePetition,IsCache,value){
 	$.ajax({
 		url: urlRequest,
 		cache: IsCache,
+		timeout: 60000,
 		success: function(data){
 			ajaxSuccess(data,typePetition,value);
 		},
 		error: function(x, t, m) {
-			ajaxError(typePetition,value,t);
+				ajaxError(typePetition,value,t);
 		}
 	});
 
@@ -324,7 +355,7 @@ function generateAlert(title,message,button){
 	navigator.notification.alert(
 		message,
 		function() {
-			navigator.app.exitApp();
+			changeContentLoading(false);
 		},
 		title,
 		button
@@ -362,6 +393,9 @@ function setupHeader(menuItems){
 		var homeHtmlString = "";
 		var menuHtmlString="";
 
+
+		homeHtmlString+='<button id="backbutton"></button>';
+
 		homeHtmlString+='<div id="logo">';
 		if(logo!="false"){
 			homeHtmlString+='<img src="'+logo+'"/>';
@@ -370,6 +404,9 @@ function setupHeader(menuItems){
 		}
 		homeHtmlString+='</div>';
 
+
+		homeHtmlString+='<button id="shareContent"></button>';
+		homeHtmlString+='<div id="loading"></div>';
 
 		menuHtmlString+='<div class="menuItemHome" menu-name="home" menu-type="home">';
 			menuHtmlString+='INICIO';
@@ -393,8 +430,10 @@ function setupHeader(menuItems){
 		setUpMenuFunctions();
 
 		$("#header").html(homeHtmlString);
-		$("#content").css("margin-top",$("#header").height());
-
+		$("#loading, #shareContent, #backbutton, #header").css("height",$("#header").height());
+		$("#header").css("padding-top",parseInt($("#header").css("padding-top").replace("px", "")));
+		$("#content").css("margin-top",($("#header").height() + parseInt($("#header").css("padding-top").replace("px", ""))));
+		$("#logo").css("margin-top",parseInt($("#logo").css("margin-top").replace("px", "")));
 		downloadMenus();
 	}
 }
@@ -415,19 +454,29 @@ function verifyDataContent(string){
 }
 
 function printArticle(articleData){
+	$("#backbutton").css("display","block");
 	articleData = verifyDataContent(articleData);
-	var article = JSON.parse(articleData);
-	var homeHtmlString = "";
+	try {
+		var article = JSON.parse(articleData);
+		var homeHtmlString = "";
 
-	homeHtmlString+='<div class="articleContentSingle" content-id="'+article.ID+'">';
+		homeHtmlString+='<div class="articleContentSingle" content-id="'+article.ID+'">';
 		homeHtmlString+="<h1>"+article.post_title+"</h1>";
 		homeHtmlString+='<img class="img-responsive img-thumbnail" src="'+article.featured_image+'"/>';
 		homeHtmlString+="<p>"+article.post_content+"</p>";
 		homeHtmlString+='<br class="clear"/>';
-	homeHtmlString+="</div>";
+		homeHtmlString+="</div>";
 
-	changeContent(homeHtmlString);
+		$("#shareContent").attr("onclick","window.plugins.socialsharing.share('"+article.post_title+"',null,null,'"+article.permalink+"')");
+		$("#shareContent").css("display","block");
+
+		changeContent(homeHtmlString);
+	} catch(e){
+		//generateAlert("Error","El Articulo al que intenta acceder no esta disponible, porfavor intente mas tarde","Aceptar");
+	}
 	changeContentLoading(false);
+
+
 	return true;
 }
 
@@ -454,6 +503,7 @@ function loadSearchFormListener(){
 }
 
 function showSearch(){
+	$("#backbutton").css("display","block");
 	setVisibleText("El datacontent se cargo");
 	var homeHtmlString='<div class="catTypesContainer">';
 		homeHtmlString+="<h1>BUSCAR</h1>";
@@ -471,7 +521,7 @@ function showArticle(articleID){
 
 function printMultiplesCategories(data){
 	setVisibleText("El datacontent se cargo");
-
+	$("#backbutton").css("display","block");
 	data= verifyDataContent(data);
 
 	try{
@@ -517,6 +567,7 @@ function printMultiplesCategories(data){
 
 function printHome(data){
 	setVisibleText("El datacontent se cargo");
+	$("#backbutton").css("display","none");
 
 	data= verifyDataContent(data);
 	try {
@@ -580,7 +631,7 @@ function printSearch(data){
 
 function printMultipleContent(data){
 	setVisibleText("El datacontent se cargo");
-
+	$("#backbutton").css("display","block");
 	data= verifyDataContent(data);
 	try {
 		var home = JSON.parse(data);
@@ -765,6 +816,7 @@ function changeContentLoading(isLoading){
 	if(isLoading){
 		contentLoadingTimeOut = setTimeout(function(){
 			$("#loading").css("display","block");
+			$("#shareContent").css("display","none");
 		}, 500);
 	} else {
 		clearTimeout(contentLoadingTimeOut);
@@ -772,19 +824,28 @@ function changeContentLoading(isLoading){
 	}
 }
 
+document.addEventListener('menubutton', function() {
+	$('.drawer').drawer('toggle');
+});
+
 $( "body" ).delegate( "h1,.closeMenu", "click", function() {
 	$('.drawer').drawer('toggle');
 });
 
-$(window).touchwipe({
-	wipeLeft: function() {
-		$('.drawer').drawer('close');
-	},
-	wipeRight: function() {
+$("#header, #logo,h1").touchwipe({
+	wipeUp: function() {
 		$('.drawer').drawer('open');
 	},
 	preventDefaultEvents: false
 });
+
+$("#content").touchwipe({
+	wipeDown: function() {
+		$('.drawer').drawer('close');
+	},
+	preventDefaultEvents: false
+});
+
 
 $( "body" ).delegate( ".subcategoryContentCategory", "click", function() {
 	changeContentLoading(true);
@@ -877,7 +938,13 @@ function showToast(message,duration){
 	return true;
 }
 
-document.addEventListener("backbutton", function(){
+$( "body" ).delegate( "#backbutton", "click", function() {
+	backAction();
+});
+
+function backAction(){
+
+	$("#shareContent").css("display","none");
 
 	setVisibleText(breadcrumbsNavigation.length);
 
@@ -921,7 +988,9 @@ document.addEventListener("backbutton", function(){
 		}
 	}
 	return true;
-}, false);
+}
+
+document.addEventListener("backbutton", backAction, false);
 
 document.addEventListener('deviceready', onDeviceReady, false);
 

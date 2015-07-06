@@ -43,6 +43,10 @@
                         {
                             "xml": "<feature name=\"Device\"><param name=\"android-package\" value=\"org.apache.cordova.device.Device\" /></feature>",
                             "count": 1
+                        },
+                        {
+                            "xml": "<feature name=\"SocialSharing\"><param name=\"android-package\" value=\"nl.xservices.plugins.SocialSharing\" /></feature>",
+                            "count": 1
                         }
                     ]
                 }
@@ -52,7 +56,7 @@
                     "/*": [
                         {
                             "xml": "<uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />",
-                            "count": 3
+                            "count": 4
                         },
                         {
                             "xml": "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\" />",
@@ -145,6 +149,9 @@
             "PACKAGE_NAME": "com.imagina.enibague"
         },
         "cordova-plugin-device": {
+            "PACKAGE_NAME": "com.imagina.enibague"
+        },
+        "nl.x-services.plugins.socialsharing": {
             "PACKAGE_NAME": "com.imagina.enibague"
         }
     },

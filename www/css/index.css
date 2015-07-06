@@ -12,9 +12,54 @@ body, html {
 	width: 100%;
 }
 
+#header #loading, #header #shareContent, #header #backbutton {
+	display: none;
+	background-size: 50%;
+	width: 15%;
+	position: absolute;
+	top: 0;
+	right: 0;
+	border: 0;
+	height: 100%;
+}
+
+#header #shareContent {
+	background: url("../img/share.png") no-repeat center;
+}
+
+#header #loading {
+	background: url("../img/loading.gif") no-repeat center;
+}
+
+#header #backbutton {
+	left: 0;
+	background: url("../img/backArrow.png") no-repeat center;
+}
+
+#header #logo {
+	text-align: center;
+	width: 70%;
+	margin-left: 15%;
+	margin-top: 2%;
+}
+
+#header #logo img {
+	max-height: 90%;
+}
+
+#header {
+	position: fixed;
+	top: 0;
+	width: 100%;
+	padding-top: 3%;
+	height: 14%;
+	margin: 0;
+	z-index: 98;
+}
+
 #content {
 	padding: 0;
-	margin: 0 0 10px 0;
+	margin-bottom: 10px;
 	position: relative;
 	z-index: 1;
 }
@@ -70,25 +115,6 @@ body, html {
 	font-size: 2.4em;
 }
 
-#header {
-	position: fixed;
-	top: 0;
-	width: 100%;
-	height: 15%;
-	margin: 0;
-	padding: 0;
-	z-index: 98;
-}
-
-#header #logo {
-	text-align: center;
-	margin-top: 2%;
-	width: 100%;
-}
-
-#header #logo img {
-	max-height: 90%;
-}
 
 #header #menu-activator {
 	display: block;
@@ -124,21 +150,9 @@ body, html {
 	width: 80%;
 	left: 10%;
 	bottom: 10%;
-
+	z-index: 80;
 	border-radius: 25px;
 	text-align: center;
-}
-
-#loading {
-	background: #000 url("../img/contentloading.gif") no-repeat 50% 50%;
-	background-size: 80px 60px;
-	height: 100%;
-	width: 100%;
-	position: fixed;
-	top: 0;
-	display: none;
-	opacity: 0.7;
-	z-index: 6000;
 }
 
 
