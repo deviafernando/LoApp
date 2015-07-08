@@ -11,8 +11,15 @@
     min-height: 300px;
 }
 
+.drawer-main .drawer-brand {
+    padding-top: 2vw;
+    font-size: 5.3vw;
+    color: #fff;
+    text-align: center;
+}
+
 #content .homeContainer .menuItem,#content .homeContainer .menuItemSearch  {
-    font-size: 2.5em;
+    font-size: 4vw;
     color: #99BF38;
     border-bottom: 1px solid #02AEF0;
     text-align: left;
@@ -83,4 +90,3 @@
 .drawer .activeMenuItem {
     color: #99BF38;
 }
-

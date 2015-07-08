@@ -44,6 +44,7 @@ body, html {
 }
 
 #header #logo img {
+	max-width: 100%;
 	max-height: 90%;
 }
 
@@ -70,7 +71,7 @@ body, html {
 
 #content .homeContainer h1,#content .catTypesContainer h1 {
 	margin: 0;
-	font-size: 4em;
+	font-size: 8vw;
 	text-transform: uppercase;
 	padding: 5px 0;
 	text-align: center;
@@ -82,7 +83,7 @@ body, html {
 	width: 100%;
 	padding: 10px;
 	border-bottom: 0;
-	font-size: 2.7em;
+	font-size: 5.4vw;
 	z-index: 3;
 	text-align: center;
 }
@@ -102,7 +103,7 @@ body, html {
 }
 
 .articleContentSingle p, .articleContentCategory p {
-	font-size: 1.8em;
+	font-size: 3.6vw;
 	text-transform: capitalize;
 }
 
@@ -112,7 +113,7 @@ body, html {
 
 .subcategoryContentCategory h2, .articleContentSingle h2,.articleContentCategory h2 {
 	text-transform: uppercase;
-	font-size: 2.4em;
+	font-size: 4.8vw;
 }
 
 
@@ -127,8 +128,8 @@ body, html {
 }
 
 .drawer .menuItemSearch, .drawer .menuItem, .drawer .menuItemHome {
-	font-size: 2.5em;
-	padding: 1em;
+	font-size: 5vw;
+	padding: 2vw;
 	text-transform: uppercase;
 }
 
@@ -141,11 +142,11 @@ body, html {
 
 #toast {
 	display: none;
-	font-size: 1.8em;
+	font-size: 3.6vw;
 	color: #fff;
 	background-color: rgba(0, 0, 0, 0.5);
 	color: rgba(255, 255, 255, 1);
-	padding: 0.5em;
+	padding: 1vw;
 	position: fixed;
 	width: 80%;
 	left: 10%;
@@ -184,44 +185,44 @@ body, html {
     content:"";
     display:table;
 }
- 
+
 .cf:after{
     clear:both;
 }
- 
+
 .cf{
     zoom:1;
-}    
+}
 .form-wrapper {
     width: 100%;
     padding: 15px;
     margin: 15px auto 15px auto;
 }
- 
+
 /* Form text input */
 .form-wrapper input {
     width: 73%;
-    height: 3em;
+    height: 6vw;
     padding: 10px 5px;
-    float: left;    
-    font: bold 2em 'lucida sans', 'trebuchet MS', 'Tahoma';
+    float: left;
+    font: bold 4vw 'lucida sans', 'trebuchet MS', 'Tahoma';
     border: 0;
     background: #eee;
-    border-radius: 3px 0 0 3px;      
+    border-radius: 3px 0 0 3px;
 }
- 
+
 .form-wrapper input:focus {
     outline: 0;
     background: #fff;
     box-shadow: 0 0 2px rgba(0,0,0,.8) inset;
 }
- 
+
 .form-wrapper input::-webkit-input-placeholder {
    color: #999;
    font-weight: normal;
    font-style: italic;
 }
- 
+
 /* Form submit button */
 .form-wrapper button {
     overflow: visible;
@@ -230,9 +231,9 @@ body, html {
     border: 0;
     padding: 0;
     cursor: pointer;
-    height: 3em;
+    height: 6vw;
     width: 24%;
-    font: bold 2em 'lucida sans', 'trebuchet MS', 'Tahoma';
+    font: bold 4vw 'lucida sans', 'trebuchet MS', 'Tahoma';
     color: #fff;
     text-transform: uppercase;
     background: #02AEF0;
