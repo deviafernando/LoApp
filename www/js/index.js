@@ -636,13 +636,18 @@ function printMultipleContent(data){
 	try {
 		var home = JSON.parse(data);
 		var homeHtmlString="";
+		var displayMore=false;
 		for (var key in home) {
 			if (home.hasOwnProperty(key)) {
 				homeHtmlString+='<div class="catTypesContainer">';
 				homeHtmlString+="<h1>"+key+"</h1>";
 				home[key].forEach(function(article) {
+
+					if(article.displayMore=="1"){
+						displayMore=true;
+					}
+
 					articlesToDownload.push(article.ID);
-					homeHtmlString+='<div class="loadMore">CARGAR MÁS</div>';
 					homeHtmlString+='<div class="articleContentCategory" content-id="'+article.ID+'">';
 					homeHtmlString+="<h2>"+article.post_title+"</h2>";
 					homeHtmlString+='<img src="'+article.featured_image+'"/>';
@@ -650,6 +655,9 @@ function printMultipleContent(data){
 					homeHtmlString+='<br class="clear" />';
 					homeHtmlString+="</div>";
 				});
+				if(displayMore){
+					homeHtmlString+='<div class="loadMore">CARGAR MÁS</div>';
+				}
 				homeHtmlString+="</div>";
 			}
 		}
